@@ -1,63 +1,71 @@
 package com.zeroturnaround.callspy;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 public class Utils {
 
-	public static String toString(String[] args) {
-		return toString((Object[]) args);
-	}
+    public static String toString(String[] args) {
+        return toString((Object[]) args);
+    }
 
-	public static String toString(Object[] args) {
-		if (args == null || args.length == 0)
-			return "";
+    public static String toString(Object[] args) {
+        if (args == null || args.length == 0)
+            return "";
 
-		StringBuilder sb = new StringBuilder();
-		if (args != null && args.length > 0) {
-			for (Object arg : args) {
-				String s = arg instanceof String ? "\"" : "";
-				sb.append(s).append(arg).append(s).append(",");
-			}
+        StringBuilder sb = new StringBuilder();
+        if (args != null && args.length > 0) {
+            for (Object arg : args) {
+                String prefix = arg instanceof String ? "\"" : "";
 
-			sb.deleteCharAt(sb.length() - 1);
-		}
+                String text = arg == null ? null : arg.toString();
+                if (arg != null && arg.getClass().isArray()) {
+                    Class elementType = arg.getClass().getComponentType();
+                    text = elementType.getName() + "[]";
+                }
 
-		return sb.toString();
-	}
+                sb.append(prefix).append(text).append(prefix).append(",");
+            }
 
-	public static String toString(Collection<?> c) {
-		if (c == null || c.isEmpty())
-			return "";
+            sb.deleteCharAt(sb.length() - 1);
+        }
 
-		String splitChar = ",";
+        return sb.toString();
+    }
 
-		StringBuilder sb = new StringBuilder(c.size() * 8);
-		for (Object o : c)
-			sb.append(o).append(splitChar);
+    public static String toString(Collection<?> c) {
+        if (c == null || c.isEmpty())
+            return "";
 
-		if (sb.length() > 0)
-			sb.delete(sb.lastIndexOf(splitChar), sb.length());
+        String splitChar = ",";
 
-		return sb.toString();
-	}
+        StringBuilder sb = new StringBuilder(c.size() * 8);
+        for (Object o : c)
+            sb.append(o).append(splitChar);
 
-	public static Set<String> splitString(String s) {
-		Set<String> data = new HashSet<>();
+        if (sb.length() > 0)
+            sb.delete(sb.lastIndexOf(splitChar), sb.length());
 
-		if (s == null || s.trim().isEmpty())
-			return data;
+        return sb.toString();
+    }
 
-		for (String e : s.trim().split(",")) {
-			e = e.trim();
-			if (e.isEmpty())
-				continue;
+    public static Set<String> splitString(String s) {
+        Set<String> data = new HashSet<>();
 
-			data.add(e);
-		}
+        if (s == null || s.trim().isEmpty())
+            return data;
 
-		return data;
-	}
+        for (String e : s.trim().split(",")) {
+            e = e.trim();
+            if (e.isEmpty())
+                continue;
+
+            data.add(e);
+        }
+
+        return data;
+    }
 
 }

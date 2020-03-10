@@ -65,12 +65,6 @@ public class CallSpy implements ClassFileTransformer {
 
                     CtMethod[] declaredMethods = ct.getDeclaredMethods();
                     for (CtMethod method : declaredMethods) {
-                        // method.insertBefore(printArgs(method));
-                        // System.out.println(getInvoke("Stack.log", className, method));
-                        // String logLine = "System.out.println(\"" + className + "." + method.getName()
-                        // + "(\" +
-                        // Stack.toString($args) + \")\");";
-
                         if (Modifier.isAbstract(method.getModifiers()))
                             continue;
 

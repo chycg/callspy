@@ -3,9 +3,13 @@ package com.zeroturnaround.callspy;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
+import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -13,8 +17,9 @@ import javassist.NotFoundException;
 
 public class CallSpy implements ClassFileTransformer {
 
-	private String includes = "";
-	private String excludes = "";
+	private Set<String> includes = new HashSet<>();
+	private Set<String> excludes = new HashSet<>();
+	private Set<String> excludeMethod = new HashSet<>();
 
 	public CallSpy(String file) {
 		Properties properties = new Properties();
@@ -24,23 +29,21 @@ public class CallSpy implements ClassFileTransformer {
 			e.printStackTrace();
 		}
 
-		includes = properties.getProperty("include");
-		excludes = properties.getProperty("exclude");
-
-		if (includes == null)
-			includes = "";
-
-		if (excludes == null)
-			excludes = "";
+		includes = Utils.splitString(properties.getProperty("include"));
+		excludes = Utils.splitString(properties.getProperty("exclude"));
+		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
 	}
 
 	@Override
 	public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
+		if (className == null)
+			return bytes;
+
 		if (className.startsWith("com/zeroturnaround/callspy")) {
 			return null;
 		}
 
-		for (String e : excludes.split(",")) {
+		for (String e : excludes) {
 			if (e.trim().isEmpty())
 				continue;
 
@@ -58,7 +61,7 @@ public class CallSpy implements ClassFileTransformer {
 		ClassPool cp = ClassPool.getDefault();
 		cp.importPackage("com.zeroturnaround.callspy");
 
-		for (String s : includes.split(",")) {
+		for (String s : includes) {
 			if (className.replace('/', '.').startsWith(s)) {
 				CtClass ct = null;
 				try {
@@ -68,14 +71,26 @@ public class CallSpy implements ClassFileTransformer {
 					for (CtMethod method : declaredMethods) {
 						// method.insertBefore(printArgs(method));
 						// System.out.println(getInvoke("Stack.log", className, method));
-						// String logLine = "System.out.println(\"" + className + "." + method.getName() + "(\" +
+						// String logLine = "System.out.println(\"" + className + "." + method.getName()
+						// + "(\" +
 						// Stack.toString($args) + \")\");";
+
+						if (Modifier.isAbstract(method.getModifiers()))
+							continue;
+
+						String name = method.getName();
+
+						if (excludeMethod.contains(name))
+							continue;
+
+						if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
+							continue;
 
 						String before = " { " +
 
 								"Stack.push();" +
 
-								"Stack.log(\"" + className + "." + method.getName() + "(\" + Stack.toString($args) + \")\");"
+								"Stack.log(\"" + className + "." + name + "(\" + Utils.toString($args) + \")\");"
 
 								+ "}";
 
@@ -84,8 +99,13 @@ public class CallSpy implements ClassFileTransformer {
 					}
 
 					return ct.toBytecode();
+				} catch (CannotCompileException e) {
+					System.out.println("===== Class compile error: " + className);
+				} catch (NotFoundException e) {
+					System.out.println("===== Class not found error: " + className);
 				} catch (Throwable e) {
 					e.printStackTrace();
+					System.out.println("===== error: className = " + className);
 				} finally {
 					if (ct != null) {
 						ct.detach();
@@ -117,7 +137,8 @@ public class CallSpy implements ClassFileTransformer {
 		sb.append("String argValues = Stack.toString($args);");
 		String logLine = "methodInfo + \"(\" + argValues + \")\"";
 
-		// String logLine = "System.out.println(\"" + className + "." + methodName + "(\" + Stack.toString($args) +
+		// String logLine = "System.out.println(\"" + className + "." + methodName +
+		// "(\" + Stack.toString($args) +
 		// \")\");";
 
 		sb.append("System.out.println(" + logLine + ");");

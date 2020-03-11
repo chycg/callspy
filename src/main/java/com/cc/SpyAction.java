@@ -3,6 +3,7 @@ package com.cc;
 public class SpyAction {
 
     public static int fun1(int a) {
+        a = 1000;
         fun12(a, a + 1);
         fun13(3333);
 

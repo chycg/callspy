@@ -70,23 +70,22 @@ public class CallSpy implements ClassFileTransformer {
 
                         String name = method.getName();
 
+                        method.getReturnType();
+
                         if (excludeMethod.contains(name))
                             continue;
 
                         if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
                             continue;
 
-                        String before = " { " +
-
-                                "Stack.push();" +
-
-                                "Stack.log(\"" + className + "." + name + "(\" + Utils.toString($args) + \") -> \" + $type);"
-
-                                + "}";
-
-//                           Stack.log((className + "." + name) + "(" + Utils.toString($args) + ")" + " -> " + $_);
+                        String before = "{ Stack.push(\"" + className + "." + name + "\", $args);}";
 
                         method.insertBefore(before);
+
+                        String end = "{ Stack.log(\"" + className + "." + name + "\", $args, $type == void.class? \"void\": String.valueOf($_));}";
+
+                        method.insertAfter(end);
+
                         method.insertAfter("{ Stack.pop(); }", true);
                     }
 

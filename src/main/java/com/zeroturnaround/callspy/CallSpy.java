@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
-import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
@@ -13,9 +12,11 @@ import javassist.*;
 
 public class CallSpy implements ClassFileTransformer {
 
-    private Set<String> includes = new HashSet<>();
-    private Set<String> excludes = new HashSet<>();
-    private Set<String> excludeMethod = new HashSet<>();
+    private Set<String> includes;
+    private Set<String> excludes;
+    private Set<String> excludeMethod;
+
+    private boolean showEntry;
 
     public CallSpy(String file) {
         Properties properties = new Properties();
@@ -28,6 +29,9 @@ public class CallSpy implements ClassFileTransformer {
         includes = Utils.splitString(properties.getProperty("include"));
         excludes = Utils.splitString(properties.getProperty("exclude"));
         excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
+
+        String value = properties.getProperty("showEntry");
+        showEntry = Boolean.valueOf(value);
     }
 
     @Override
@@ -78,7 +82,7 @@ public class CallSpy implements ClassFileTransformer {
                         if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
                             continue;
 
-                        String before = "{ Stack.push(\"" + className + "." + name + "\", $args);}";
+                        String before = showEntry ? "{ Stack.push(\"" + className + "." + name + "\", $args);}" : "{Stack.push();}";
 
                         method.insertBefore(before);
 

@@ -8,131 +8,138 @@ import java.security.ProtectionDomain;
 import java.util.Properties;
 import java.util.Set;
 
-import javassist.*;
+import javassist.CannotCompileException;
+import javassist.ClassPool;
+import javassist.CtClass;
+import javassist.CtMethod;
+import javassist.NotFoundException;
 
 public class CallSpy implements ClassFileTransformer {
 
-    private Set<String> includes;
-    private Set<String> excludes;
-    private Set<String> excludeMethod;
+	private Set<String> includes;
+	private Set<String> excludes;
+	private Set<String> excludeMethod;
 
-    private boolean showEntry;
+	private boolean showEntry;
 
-    public CallSpy(String file) {
-        Properties properties = new Properties();
-        try (FileInputStream fis = new FileInputStream(file);) {
-            properties.load(fis);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+	public CallSpy(String file) {
+		Properties properties = new Properties();
+		try (FileInputStream fis = new FileInputStream(file);) {
+			properties.load(fis);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
-        includes = Utils.splitString(properties.getProperty("include"));
-        excludes = Utils.splitString(properties.getProperty("exclude"));
-        excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
+		includes = Utils.splitString(properties.getProperty("include"));
+		excludes = Utils.splitString(properties.getProperty("exclude"));
+		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
 
-        String value = properties.getProperty("showEntry");
-        showEntry = Boolean.valueOf(value);
-    }
+		String value = properties.getProperty("showEntry");
+		showEntry = Boolean.valueOf(value);
 
-    @Override
-    public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
-        if (className == null)
-            return bytes;
+		Stack.filePath = properties.getProperty("filePath");
+	}
 
-        if (className.startsWith("com/zeroturnaround/callspy")) {
-            return null;
-        }
+	@Override
+	public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
+		if (className == null)
+			return bytes;
 
-        for (String e : excludes) {
-            if (e.trim().isEmpty())
-                continue;
+		if (className.startsWith("com/zeroturnaround/callspy")) {
+			return null;
+		}
 
-            String name = className.replace('/', '.');
-            String Name = null;
-            if (e.charAt(0) >= 65 && e.charAt(0) <= 97) {
-                int index = name.lastIndexOf('.');
-                Name = name.substring(index + 1, name.length());
-            }
+		for (String e : excludes) {
+			if (e.trim().isEmpty())
+				continue;
 
-            if (name.startsWith(e) || Name != null && e.endsWith(Name))
-                return bytes;
-        }
+			String name = className.replace('/', '.');
+			String Name = null;
+			if (e.charAt(0) >= 65 && e.charAt(0) <= 97) {
+				int index = name.lastIndexOf('.');
+				Name = name.substring(index + 1, name.length());
+			}
 
-        ClassPool cp = ClassPool.getDefault();
-        cp.importPackage("com.zeroturnaround.callspy");
+			if (name.startsWith(e) || Name != null && e.endsWith(Name))
+				return bytes;
+		}
 
-        for (String s : includes) {
-            if (className.replace('/', '.').startsWith(s)) {
-                CtClass ct = null;
-                try {
-                    ct = cp.makeClass(new ByteArrayInputStream(bytes));
+		ClassPool cp = ClassPool.getDefault();
+		cp.importPackage("com.zeroturnaround.callspy");
 
-                    CtMethod[] declaredMethods = ct.getDeclaredMethods();
-                    for (CtMethod method : declaredMethods) {
-                        if (Modifier.isAbstract(method.getModifiers()))
-                            continue;
+		for (String s : includes) {
+			if (className.replace('/', '.').startsWith(s)) {
+				CtClass ct = null;
+				try {
+					ct = cp.makeClass(new ByteArrayInputStream(bytes));
 
-                        String name = method.getName();
+					CtMethod[] declaredMethods = ct.getDeclaredMethods();
+					for (CtMethod method : declaredMethods) {
+						if (Modifier.isAbstract(method.getModifiers()))
+							continue;
 
-                        method.getReturnType();
+						String name = method.getName();
 
-                        if (excludeMethod.contains(name))
-                            continue;
+						method.getReturnType();
 
-                        if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
-                            continue;
+						if (excludeMethod.contains(name))
+							continue;
 
-                        String before = showEntry ? "{ Stack.push(\"" + className + "." + name + "\", $args);}" : "{Stack.push();}";
+						if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
+							continue;
 
-                        method.insertBefore(before);
+						String before = showEntry ? "{ Stack.push(\"" + className + "." + name + "\", $args);}" : "{Stack.push();}";
 
-                        String end = "{ Stack.log(\"" + className + "." + name + "\", $args, $type == void.class? \"void\": String.valueOf($_));}";
+						method.insertBefore(before);
 
-                        method.insertAfter(end);
+						String end = "{ Stack.log(\"" + className + "." + name
+								+ "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
 
-                        method.insertAfter("{ Stack.pop(); }", true);
-                    }
+						method.insertAfter(end, true);
 
-                    return ct.toBytecode();
-                } catch (CannotCompileException e) {
-                    e.printStackTrace();
-                    System.out.println("===== Class compile error: " + className);
-                } catch (NotFoundException e) {
-                    System.out.println("===== Class not found error: " + className);
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    System.out.println("===== error: className = " + className);
-                } finally {
-                    if (ct != null) {
-                        ct.detach();
-                    }
-                }
-            }
-        }
+						// method.insertAfter("{ Stack.pop(); }", true);
+					}
 
-        return bytes;
-    }
+					return ct.toBytecode();
+				} catch (CannotCompileException e) {
+					e.printStackTrace();
+					System.out.println("===== Class compile error: " + className);
+				} catch (NotFoundException e) {
+					System.out.println("===== Class not found error: " + className);
+				} catch (Throwable e) {
+					e.printStackTrace();
+					System.out.println("===== error: className = " + className);
+				} finally {
+					if (ct != null) {
+						ct.detach();
+					}
+				}
+			}
+		}
 
-    private String getInvoke(String method, Object... value) {
-        StringBuilder sb = new StringBuilder(method).append("(");
-        if (value != null) {
-            for (Object v : value) {
-                if (v instanceof String && !v.toString().startsWith("$")) {
-                    sb.append("\"").append(v).append("\"").append(",");
-                } else {
-                    sb.append(v).append(",");
-                }
-            }
+		return bytes;
+	}
 
-            if (value.length > 0)
-                sb.deleteCharAt(sb.length() - 1);
-        }
+	private String getInvoke(String method, Object... value) {
+		StringBuilder sb = new StringBuilder(method).append("(");
+		if (value != null) {
+			for (Object v : value) {
+				if (v instanceof String && !v.toString().startsWith("$")) {
+					sb.append("\"").append(v).append("\"").append(",");
+				} else {
+					sb.append(v).append(",");
+				}
+			}
 
-        sb.append(");");
+			if (value.length > 0)
+				sb.deleteCharAt(sb.length() - 1);
+		}
 
-        System.out.println(sb);
+		sb.append(");");
 
-        return sb.toString();
-    }
+		System.out.println(sb);
+
+		return sb.toString();
+	}
 
 }

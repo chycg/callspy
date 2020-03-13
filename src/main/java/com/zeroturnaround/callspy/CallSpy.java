@@ -37,7 +37,11 @@ public class CallSpy implements ClassFileTransformer {
 		String value = properties.getProperty("showEntry");
 		showEntry = Boolean.valueOf(value);
 
-		Stack.filePath = properties.getProperty("filePath");
+		String path = properties.getProperty("filePath");
+		if (path == null)
+			path = "user.log";
+
+		Stack.filePath = path;
 	}
 
 	@Override

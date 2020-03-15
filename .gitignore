@@ -1,1 +1,5 @@
 /target/
+.idea/
+org.eclipse.*
+.project
+.classpath

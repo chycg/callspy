@@ -21,6 +21,9 @@ public class CallSpy implements ClassFileTransformer {
 	private Set<String> excludeMethod;
 
 	private boolean showEntry;
+	private boolean showGetter;
+
+	private String currentMethod;
 
 	public CallSpy(String file) {
 		Properties properties = new Properties();
@@ -34,24 +37,27 @@ public class CallSpy implements ClassFileTransformer {
 		excludes = Utils.splitString(properties.getProperty("exclude"));
 		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
 
-		String value = properties.getProperty("showEntry");
+		String value = properties.getProperty("showEntry"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
 
+		value = properties.getProperty("showGetter");
+		showGetter = Boolean.valueOf(value);
+
+		value = properties.getProperty("consoleLog"); // 是否输出控制台日志
+		boolean consoleLog = value == null ? true : Boolean.valueOf(value);
+
+		String indent = properties.getProperty("indent");
 		String path = properties.getProperty("filePath");
 		if (path == null)
 			path = "user.log";
 
-		Stack.filePath = path;
+		Stack.init(consoleLog, indent, path);
 	}
 
 	@Override
 	public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
-		if (className == null)
-			return bytes;
-
-		if (className.startsWith("com/zeroturnaround/callspy")) {
+		if (className == null || className.startsWith("com/zeroturnaround/callspy"))
 			return null;
-		}
 
 		for (String e : excludes) {
 			if (e.trim().isEmpty())
@@ -83,36 +89,32 @@ public class CallSpy implements ClassFileTransformer {
 							continue;
 
 						String name = method.getName();
-
-						method.getReturnType();
-
 						if (excludeMethod.contains(name))
 							continue;
 
-						if (method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
+						if (showGetter && method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
 							continue;
 
-						String before = showEntry ? "{ Stack.push(\"" + className + "." + name + "\", $args);}" : "{Stack.push();}";
+						currentMethod = className + "." + name;
+
+						String before = showEntry ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
 
 						method.insertBefore(before);
 
-						String end = "{ Stack.log(\"" + className + "." + name
-								+ "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
+						String end = "{ Stack.log(\"" + currentMethod + "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
 
 						method.insertAfter(end, true);
-
-						// method.insertAfter("{ Stack.pop(); }", true);
 					}
 
 					return ct.toBytecode();
 				} catch (CannotCompileException e) {
 					e.printStackTrace();
-					System.out.println("===== Class compile error: " + className);
+					System.out.println("===== Class compile error: " + currentMethod);
 				} catch (NotFoundException e) {
-					System.out.println("===== Class not found error: " + className);
+					System.out.println("===== Class not found error: " + currentMethod);
 				} catch (Throwable e) {
 					e.printStackTrace();
-					System.out.println("===== error: className = " + className);
+					System.out.println("===== error: className = " + currentMethod);
 				} finally {
 					if (ct != null) {
 						ct.detach();
@@ -123,27 +125,4 @@ public class CallSpy implements ClassFileTransformer {
 
 		return bytes;
 	}
-
-	private String getInvoke(String method, Object... value) {
-		StringBuilder sb = new StringBuilder(method).append("(");
-		if (value != null) {
-			for (Object v : value) {
-				if (v instanceof String && !v.toString().startsWith("$")) {
-					sb.append("\"").append(v).append("\"").append(",");
-				} else {
-					sb.append(v).append(",");
-				}
-			}
-
-			if (value.length > 0)
-				sb.deleteCharAt(sb.length() - 1);
-		}
-
-		sb.append(");");
-
-		System.out.println(sb);
-
-		return sb.toString();
-	}
-
 }

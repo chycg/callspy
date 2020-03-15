@@ -1,55 +1,48 @@
 package com.zeroturnaround.callspy;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Stack {
 
-	static BufferedWriter bw;
+	private static boolean consoleLog;
 
-	static String filePath;
+	private static String indent = " ";
 
-	static String indent = "";
+	private static String filePath;
+
+	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
+
+	static void init(boolean consoleLog, String indent, String filePath) {
+		Stack.consoleLog = consoleLog;
+		Stack.indent = indent == null ? " " : indent;
+		Stack.filePath = filePath;
+	}
 
 	public static void push() {
-		indent += " ";
+		long threadId = Thread.currentThread().getId();
+		Trace trace = map.get(threadId);
+		if (trace == null) {
+			trace = new Trace(consoleLog, indent, threadId, filePath);
+			map.put(threadId, trace);
+		}
+
+		trace.push();
 	}
 
 	public static void pop() {
-		if (indent.isEmpty())
-			return;
+		Trace trace = map.get(Thread.currentThread().getId());
+		trace.pop();
+	}
 
-		indent = indent.substring(1);
+	public static void log(String string) {
+		Trace trace = map.get(Thread.currentThread().getId());
+		trace.log(string);
 	}
 
 	public static void push(String method, Object[] args) {
 		push();
-
 		log(method, args);
-	}
-
-	public static void log(String string) {
-		String line = indent + string;
-		System.out.println(line);
-
-		if (filePath != null) {
-			try {
-				if (bw == null) {
-					File file = new File(filePath);
-					if (file.exists())
-						file.delete();
-
-					bw = new BufferedWriter(new FileWriter(file));
-				}
-
-				bw.append(line).append("\n");
-				bw.flush();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 	public static void log(String method, Object[] args) {

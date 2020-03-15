@@ -23,7 +23,13 @@ public class Trace {
 		this.indent = indent;
 		this.consoleLog = consoleLog;
 
-		File file = new File(filePath + "." + threadId);
+		File dir = new File("./" + DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now()));
+		dir.mkdirs();
+
+		for (File file : dir.listFiles())
+			file.delete();
+
+		File file = new File(dir, filePath + "." + threadId);
 		try {
 			bw = new BufferedWriter(new FileWriter(file));
 			if (file.exists()) {

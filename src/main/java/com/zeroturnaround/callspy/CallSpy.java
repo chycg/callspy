@@ -25,6 +25,8 @@ public class CallSpy implements ClassFileTransformer {
 
 	private String currentMethod;
 
+	private Set<String> imports;
+
 	public CallSpy(String file) {
 		Properties properties = new Properties();
 		try (FileInputStream fis = new FileInputStream(file);) {
@@ -45,6 +47,10 @@ public class CallSpy implements ClassFileTransformer {
 
 		value = properties.getProperty("consoleLog"); // 是否输出控制台日志
 		boolean consoleLog = value == null ? true : Boolean.valueOf(value);
+
+		String importsValue = properties.getProperty("imports");
+		imports = Utils.splitString(importsValue);
+		imports.add("com.zeroturnaround.callspy");
 
 		String indent = properties.getProperty("indent");
 		String path = properties.getProperty("filePath");
@@ -75,7 +81,9 @@ public class CallSpy implements ClassFileTransformer {
 		}
 
 		ClassPool cp = ClassPool.getDefault();
-		cp.importPackage("com.zeroturnaround.callspy");
+		for (String item : imports) {
+			cp.importPackage(item);
+		}
 
 		for (String s : includes) {
 			if (className.replace('/', '.').startsWith(s)) {
@@ -101,7 +109,8 @@ public class CallSpy implements ClassFileTransformer {
 
 						method.insertBefore(before);
 
-						String end = "{ Stack.log(\"" + currentMethod + "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
+						String end = "{ Stack.log(\"" + currentMethod
+								+ "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
 
 						method.insertAfter(end, true);
 					}

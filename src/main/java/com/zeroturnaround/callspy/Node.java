@@ -14,6 +14,7 @@ public class Node implements Serializable {
 
 	public Node(String line) {
 		this.line = line.trim();
+		this.method = line.substring(0, line.indexOf("("));
 	}
 
 	public String getMethod() {

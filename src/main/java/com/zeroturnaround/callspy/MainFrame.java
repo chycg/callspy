@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.BiPredicate;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -23,6 +24,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.JTree;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -83,7 +86,37 @@ public class MainFrame extends JFrame {
 		}
 	};
 
+	private AbstractAction removeMethodAction = new AbstractAction("removeMethod") {
+
+		private static final long serialVersionUID = -5615934028594122494L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			TreePath path = tree.getSelectionPath();
+			if (path == null)
+				return;
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			if (node == null)
+				return;
+
+			Node data = (Node) node.getUserObject();
+			if (data != null) {
+				removeTreeNode(root, data.getMethod());
+			}
+
+			if (node.getParent() != null)
+				model.removeNodeFromParent(node);
+		}
+	};
+
 	public static void main(String[] args) {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
+
 		new MainFrame();
 	}
 
@@ -110,9 +143,29 @@ public class MainFrame extends JFrame {
 
 		parseFile(null);
 
+		tree.putClientProperty("JTree.lineStyle", "Horizontal");
+
+		JTreeUtil.setTreeExpandedState(tree, true);
+		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
+		tree.setCellRenderer(new TradingProjectTreeRenderer(() -> filterDecorator.getFilterField().getText()));
+
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
+	}
+
+	private BiPredicate<Object, String> createUserObjectMatcher() {
+		return (userObject, textToFilter) -> {
+			if (userObject instanceof ProjectParticipant) {
+				ProjectParticipant pp = (ProjectParticipant) userObject;
+				return pp.getName().toLowerCase().contains(textToFilter) || pp.getRole().toLowerCase().contains(textToFilter);
+			} else if (userObject instanceof Project) {
+				Project project = (Project) userObject;
+				return project.getName().toLowerCase().contains(textToFilter);
+			} else {
+				return userObject.toString().toLowerCase().contains(textToFilter);
+			}
+		};
 	}
 
 	private void initListener() {
@@ -139,6 +192,7 @@ public class MainFrame extends JFrame {
 
 		JPopupMenu popup = new JPopupMenu();
 		popup.add(new JMenuItem(removeAction));
+		popup.add(new JMenuItem(removeMethodAction));
 		popup.add(new JMenuItem(copyAction));
 
 		tree.setComponentPopupMenu(popup);

@@ -12,7 +12,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.BiPredicate;
 
 import javax.swing.AbstractAction;
@@ -22,6 +24,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.UIManager;
@@ -39,13 +42,15 @@ public class MainFrame extends JFrame {
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 	private DefaultTreeModel model = new DefaultTreeModel(root);
 
-	private JTextField tfFilter = new JTextField();
-	private JTextField tfExclude = new JTextField();
+	private JTextField tfFilter;
+	private JTextArea tfExclude = new JTextArea(5, 0);
 
 	private JTree tree = new JTree(model);
 	private DefaultMutableTreeNode parentNode = root;
 
 	private int lastCount = -1;
+
+	private Set<String> set = new HashSet<>();
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -64,6 +69,27 @@ public class MainFrame extends JFrame {
 
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 			Transferable trans = new StringSelection(data.getLine());
+			clipboard.setContents(trans, null);
+		}
+	};
+
+	private AbstractAction copyMethodAction = new AbstractAction("copyMethod") {
+
+		private static final long serialVersionUID = 9024135081208422380L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			TreePath path = tree.getSelectionPath();
+			if (path == null)
+				return;
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			Node data = (Node) node.getUserObject();
+			if (data == null)
+				return;
+
+			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+			Transferable trans = new StringSelection(data.getMethodName());
 			clipboard.setContents(trans, null);
 		}
 	};
@@ -103,9 +129,11 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				removeTreeNode(root, data.getMethod());
+				set.add(data.getMethodName());
+				tfExclude.setText(Utils.toString(set));
 			}
 
-			if (node.getParent() != null)
+			if (node.getParent() != null && node.getChildCount() == 0)
 				model.removeNodeFromParent(node);
 		}
 	};
@@ -132,6 +160,11 @@ public class MainFrame extends JFrame {
 	}
 
 	private void initLayout() {
+		JTreeUtil.setTreeExpandedState(tree, true);
+		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
+		tfFilter = filterDecorator.getFilterField();
+		tree.setCellRenderer(new TradingProjectTreeRenderer(() -> tfFilter.getText()));
+
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		panel.add(tfFilter, BorderLayout.NORTH);
@@ -144,42 +177,38 @@ public class MainFrame extends JFrame {
 		parseFile(null);
 
 		tree.putClientProperty("JTree.lineStyle", "Horizontal");
-
-		JTreeUtil.setTreeExpandedState(tree, true);
-		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
-		tree.setCellRenderer(new TradingProjectTreeRenderer(() -> filterDecorator.getFilterField().getText()));
+		tree.setRowHeight(23);
 
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
 		}
+
+		tree.setRootVisible(false);
 	}
 
 	private BiPredicate<Object, String> createUserObjectMatcher() {
 		return (userObject, textToFilter) -> {
-			if (userObject instanceof ProjectParticipant) {
-				ProjectParticipant pp = (ProjectParticipant) userObject;
-				return pp.getName().toLowerCase().contains(textToFilter) || pp.getRole().toLowerCase().contains(textToFilter);
-			} else if (userObject instanceof Project) {
-				Project project = (Project) userObject;
-				return project.getName().toLowerCase().contains(textToFilter);
-			} else {
-				return userObject.toString().toLowerCase().contains(textToFilter);
+			if (userObject instanceof Node) {
+				Node project = (Node) userObject;
+				return project.getLine().toLowerCase().contains(textToFilter);
 			}
+
+			return userObject.toString().toLowerCase().contains(textToFilter);
 		};
 	}
 
 	private void initListener() {
-		tfFilter.addActionListener(e -> {
-			String text = tfFilter.getText().trim();
-			if (text.isEmpty())
-				return;
-
-			tfFilter.setText(null);
-			if (!tfExclude.getText().contains(text)) {
-				tfExclude.setText(tfExclude.getText() + "," + text);
-			}
-			removeTreeNode(root, text);
-		});
+		// tfFilter.addActionListener(e -> {
+		// String text = tfFilter.getText().trim();
+		// if (text.isEmpty())
+		// return;
+		//
+		// tfFilter.setText(null);
+		// if (!tfExclude.getText().contains(text)) {
+		// tfExclude.setText(tfExclude.getText() + "," + text);
+		// }
+		// removeTreeNode(root, text);
+		// });
 
 		tfExclude.addMouseListener(new MouseAdapter() {
 
@@ -194,6 +223,7 @@ public class MainFrame extends JFrame {
 		popup.add(new JMenuItem(removeAction));
 		popup.add(new JMenuItem(removeMethodAction));
 		popup.add(new JMenuItem(copyAction));
+		popup.add(new JMenuItem(copyMethodAction));
 
 		tree.setComponentPopupMenu(popup);
 	}
@@ -201,7 +231,7 @@ public class MainFrame extends JFrame {
 	private void removeTreeNode(DefaultMutableTreeNode node, String text) {
 		if (node.getUserObject().getClass() == Node.class) {
 			Node data = (Node) node.getUserObject();
-			if (data != null && data.getLine().contains(text)) {
+			if (data != null && data.getLine().contains(text) && node.getChildCount() == 0) {
 				model.removeNodeFromParent(node);
 			}
 		}
@@ -213,7 +243,7 @@ public class MainFrame extends JFrame {
 	}
 
 	private void parseFile(String path) {
-		path = "D:\\git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
+		path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
 
 		try {
 			List<String> list = Files.readAllLines(Paths.get(new File(path).toURI()));
@@ -250,7 +280,13 @@ public class MainFrame extends JFrame {
 		line = line.substring(count);
 		line = line.replaceAll("> +", ">");
 
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Node(line));
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Node(line, count));
+
+		if (count < lastCount) {
+			parentNode = (DefaultMutableTreeNode) parentNode.getParent();
+			lastCount = ((Node) parentNode.getUserObject()).getCount();
+		}
+
 		if (count > lastCount) {
 			model.insertNodeInto(node, parentNode, parentNode.getChildCount());
 			parentNode = node;

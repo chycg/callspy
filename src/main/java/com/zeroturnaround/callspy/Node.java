@@ -8,12 +8,15 @@ public class Node implements Serializable {
 
 	private String line;
 
+	private int count;
+
 	private String method;
 
 	private String result;
 
-	public Node(String line) {
+	public Node(String line, int count) {
 		this.line = line.trim();
+		this.count = count;
 		this.method = line.substring(0, line.indexOf("("));
 	}
 
@@ -23,6 +26,10 @@ public class Node implements Serializable {
 
 	public void setMethod(String method) {
 		this.method = method;
+	}
+
+	public String getMethodName() {
+		return method.substring(method.indexOf(".") + 1, method.length());
 	}
 
 	public String getResult() {
@@ -41,6 +48,14 @@ public class Node implements Serializable {
 
 	public String getLine() {
 		return line;
+	}
+
+	public int getCount() {
+		return count;
+	}
+
+	public void setCount(int count) {
+		this.count = count;
 	}
 
 	public boolean isResult(String line) {

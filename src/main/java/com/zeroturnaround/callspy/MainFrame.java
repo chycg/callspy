@@ -1,6 +1,7 @@
 package com.zeroturnaround.callspy;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -43,7 +44,8 @@ public class MainFrame extends JFrame {
 	private DefaultTreeModel model = new DefaultTreeModel(root);
 
 	private JTextField tfFilter;
-	private JTextArea tfExclude = new JTextArea(5, 0);
+	private JTextArea taExclude = new JTextArea(5, 0);
+	private JTextField tfSelection = new JTextField();
 
 	private JTree tree = new JTree(model);
 	private DefaultMutableTreeNode parentNode = root;
@@ -58,17 +60,27 @@ public class MainFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			TreePath path = tree.getSelectionPath();
-			if (path == null)
-				return;
+			JMenuItem mi = (JMenuItem) e.getSource();
+			JPopupMenu p = (JPopupMenu) mi.getParent();
+			Component c = p.getInvoker();
+			String text = null;
+			if (c == tree) {
+				TreePath path = tree.getSelectionPath();
+				if (path == null)
+					return;
 
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-			Node data = (Node) node.getUserObject();
-			if (data == null)
-				return;
+				DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+				Node data = (Node) node.getUserObject();
+				if (data == null)
+					return;
+
+				text = data.getLine();
+			} else if (c == tfSelection) {
+				text = tfSelection.getText();
+			}
 
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-			Transferable trans = new StringSelection(data.getLine());
+			Transferable trans = new StringSelection(text);
 			clipboard.setContents(trans, null);
 		}
 	};
@@ -130,7 +142,8 @@ public class MainFrame extends JFrame {
 			if (data != null) {
 				removeTreeNode(root, data.getMethod());
 				set.add(data.getMethodName());
-				tfExclude.setText(Utils.toString(set));
+				taExclude.setText(Utils.toString(set));
+				System.out.println(Utils.toString(set));
 			}
 
 			if (node.getParent() != null && node.getChildCount() == 0)
@@ -168,8 +181,13 @@ public class MainFrame extends JFrame {
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		panel.add(tfFilter, BorderLayout.NORTH);
-		panel.add(tfExclude, BorderLayout.SOUTH);
-		tfExclude.setEditable(false);
+
+		JPanel bottomPane = new JPanel(new BorderLayout());
+		bottomPane.add(taExclude);
+		bottomPane.add(tfSelection, BorderLayout.SOUTH);
+		panel.add(bottomPane, BorderLayout.SOUTH);
+
+		taExclude.setEditable(false);
 
 		panel.add(new JScrollPane(tree));
 		this.add(panel);
@@ -210,12 +228,11 @@ public class MainFrame extends JFrame {
 		// removeTreeNode(root, text);
 		// });
 
-		tfExclude.addMouseListener(new MouseAdapter() {
-
+		taExclude.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() > 1)
-					tfExclude.setText(null);
+					taExclude.selectAll();
 			}
 		});
 
@@ -226,6 +243,23 @@ public class MainFrame extends JFrame {
 		popup.add(new JMenuItem(copyMethodAction));
 
 		tree.setComponentPopupMenu(popup);
+
+		tree.addTreeSelectionListener(e -> {
+			TreePath path = e.getNewLeadSelectionPath();
+			if (path == null)
+				return;
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			if (node == null)
+				return;
+
+			Node data = (Node) node.getUserObject();
+			tfSelection.setText(data.getCallName());
+		});
+
+		JPopupMenu popupMenu = new JPopupMenu();
+		popupMenu.add(new JMenuItem(copyAction));
+		tfSelection.setComponentPopupMenu(popupMenu);
 	}
 
 	private void removeTreeNode(DefaultMutableTreeNode node, String text) {

@@ -1,4 +1,4 @@
-package com.zeroturnaround.callspy;
+package com.zeroturnaround.callspy.tree;
 
 import java.util.function.BiPredicate;
 
@@ -13,7 +13,7 @@ public class TreeFilterDecorator {
 	private final JTree tree;
 	private DefaultMutableTreeNode originalRootNode;
 	private BiPredicate<Object, String> userObjectMatcher;
-	private JTextField filterField;
+	private JTextField filterField = new JTextField(15);
 
 	public TreeFilterDecorator(JTree tree, BiPredicate<Object, String> userObjectMatcher) {
 		this.tree = tree;
@@ -24,6 +24,7 @@ public class TreeFilterDecorator {
 	public static TreeFilterDecorator decorate(JTree tree, BiPredicate<Object, String> userObjectMatcher) {
 		TreeFilterDecorator tfd = new TreeFilterDecorator(tree, userObjectMatcher);
 		tfd.init();
+
 		return tfd;
 	}
 
@@ -32,11 +33,6 @@ public class TreeFilterDecorator {
 	}
 
 	private void init() {
-		initFilterField();
-	}
-
-	private void initFilterField() {
-		filterField = new JTextField(15);
 		filterField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void insertUpdate(DocumentEvent e) {
@@ -72,6 +68,7 @@ public class TreeFilterDecorator {
 		if (!oldNode.isRoot() && userObjectMatcher.test(oldNode.getUserObject(), text)) {
 			return JTreeUtil.copyNode(oldNode);
 		}
+
 		DefaultMutableTreeNode newMatchedNode = oldNode.isRoot() ? new DefaultMutableTreeNode(oldNode.getUserObject()) : null;
 		for (DefaultMutableTreeNode childOldNode : JTreeUtil.children(oldNode)) {
 			DefaultMutableTreeNode newMatchedChildNode = matchAndBuildNode(text, childOldNode);

@@ -1,7 +1,8 @@
-package com.zeroturnaround.callspy;
+package com.zeroturnaround.callspy.tree;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -36,9 +37,14 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import com.zeroturnaround.callspy.Utils;
+
 public class MainFrame extends JFrame {
 
 	private static final long serialVersionUID = -1266662931999876034L;
+
+	private final String path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
+	private final char spaceChar = '~';
 
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 	private DefaultTreeModel model = new DefaultTreeModel(root);
@@ -53,6 +59,8 @@ public class MainFrame extends JFrame {
 	private int lastCount = -1;
 
 	private Set<String> set = new HashSet<>();
+
+	private Font font = new Font("dialog", Font.PLAIN, 14);
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -151,19 +159,13 @@ public class MainFrame extends JFrame {
 		}
 	};
 
-	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-			e.printStackTrace();
-		}
-
-		new MainFrame();
-	}
-
 	public MainFrame() {
 		initLayout();
 		initListener();
+
+		tfFilter.setFont(font);
+		tfSelection.setFont(font);
+		taExclude.setFont(font);
 
 		setTitle("trace");
 		setSize(800, 600);
@@ -176,7 +178,7 @@ public class MainFrame extends JFrame {
 		JTreeUtil.setTreeExpandedState(tree, true);
 		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
 		tfFilter = filterDecorator.getFilterField();
-		tree.setCellRenderer(new TradingProjectTreeRenderer(() -> tfFilter.getText()));
+		tree.setCellRenderer(new TreeNodeRenderer(() -> tfFilter.getText()));
 
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -192,10 +194,10 @@ public class MainFrame extends JFrame {
 		panel.add(new JScrollPane(tree));
 		this.add(panel);
 
-		parseFile(null);
+		parseFile();
 
 		tree.putClientProperty("JTree.lineStyle", "Horizontal");
-		tree.setRowHeight(23);
+		tree.setRowHeight(24);
 
 		for (int i = 0; i < tree.getRowCount(); i++) {
 			tree.expandRow(i);
@@ -216,18 +218,6 @@ public class MainFrame extends JFrame {
 	}
 
 	private void initListener() {
-		// tfFilter.addActionListener(e -> {
-		// String text = tfFilter.getText().trim();
-		// if (text.isEmpty())
-		// return;
-		//
-		// tfFilter.setText(null);
-		// if (!tfExclude.getText().contains(text)) {
-		// tfExclude.setText(tfExclude.getText() + "," + text);
-		// }
-		// removeTreeNode(root, text);
-		// });
-
 		taExclude.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -276,8 +266,7 @@ public class MainFrame extends JFrame {
 		}
 	}
 
-	private void parseFile(String path) {
-		path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
+	private void parseFile() {
 
 		try {
 			List<String> list = Files.readAllLines(Paths.get(new File(path).toURI()));
@@ -311,8 +300,18 @@ public class MainFrame extends JFrame {
 
 	private void addNode(String line) {
 		int count = countSpace(line);
-		line = line.substring(count);
-		line = line.replaceAll("> +", ">");
+		int index = line.indexOf("->");
+
+		String result = null;
+		if (index > 0) { // 结果行，取结果
+			result = line.substring(index, line.length());
+		} else {
+			index = line.length();
+		}
+
+		line = line.substring(count, index).replaceAll("> +", ">");
+		if (result != null)
+			line += result;
 
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Node(line, count));
 
@@ -339,16 +338,26 @@ public class MainFrame extends JFrame {
 	}
 
 	private int countSpace(String line) {
-		if (!line.startsWith("~"))
+		if (!line.startsWith(String.valueOf(spaceChar)))
 			return -1;
 
 		for (int i = 0; i < line.length(); i++) {
-			if (line.charAt(i) == '~')
+			if (line.charAt(i) == spaceChar)
 				continue;
 
 			return i;
 		}
 
 		return 0;
+	}
+
+	public static void main(String[] args) {
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
+
+		new MainFrame();
 	}
 }

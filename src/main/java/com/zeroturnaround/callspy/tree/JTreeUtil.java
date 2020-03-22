@@ -1,4 +1,4 @@
-package com.zeroturnaround.callspy;
+package com.zeroturnaround.callspy.tree;
 
 import java.util.Collections;
 import java.util.List;

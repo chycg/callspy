@@ -110,7 +110,7 @@ public class CallSpy implements ClassFileTransformer {
 						method.insertBefore(before);
 
 						String end = "{ Stack.log(\"" + currentMethod
-								+ "\", $args, $type == void.class? \" void\": String.valueOf($_)); Stack.pop(); }";
+								+ "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
 
 						method.insertAfter(end, true);
 					}

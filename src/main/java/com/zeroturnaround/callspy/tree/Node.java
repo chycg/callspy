@@ -24,27 +24,21 @@ public class Node implements Serializable {
 		return method;
 	}
 
-	public void setMethod(String method) {
-		this.method = method;
-	}
 
 	public String getMethodName() {
-		return method.substring(method.indexOf(".") + 1, method.length());
+		return method.substring(method.indexOf(".") + 1);
 	}
 
 	public String getCallName() {
 		return method.replaceAll("/", ".");
 	}
 
-	public String getResult() {
-		return result;
-	}
 
 	public void setResultLine(String line) {
 		line = line.trim();
 		int index = line.indexOf("->");
 		this.line = line;
-		this.result = line.substring(index + 2, line.length()).trim();
+		this.result = line.substring(index + 2).trim();
 	}
 
 	public boolean hasResult() {
@@ -57,10 +51,6 @@ public class Node implements Serializable {
 
 	public int getCount() {
 		return count;
-	}
-
-	public void setCount(int count) {
-		this.count = count;
 	}
 
 	public boolean isResult(String line) {

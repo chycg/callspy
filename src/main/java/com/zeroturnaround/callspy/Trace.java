@@ -10,11 +10,11 @@ public class Trace {
 
 	private final long threadId;
 
+	private final String indent;
+
 	private final boolean consoleLog;
 
 	private String initIndent = "";
-
-	private String indent = " ";
 
 	private BufferedWriter bw;
 
@@ -64,10 +64,6 @@ public class Trace {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public long getThreadId() {
-		return threadId;
 	}
 
 	@Override

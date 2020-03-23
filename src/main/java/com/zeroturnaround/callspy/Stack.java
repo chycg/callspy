@@ -7,7 +7,7 @@ public class Stack {
 
 	private static boolean consoleLog;
 
-	private static String indent = " ";
+	private static String indent = "~";
 
 	private static String filePath;
 
@@ -15,7 +15,7 @@ public class Stack {
 
 	static void init(boolean consoleLog, String indent, String filePath) {
 		Stack.consoleLog = consoleLog;
-		Stack.indent = indent == null ? " " : indent;
+		Stack.indent = indent == null ? "~" : indent;
 		Stack.filePath = filePath;
 	}
 

@@ -84,7 +84,11 @@ public class MainFrame extends JFrame {
 
 				text = data.getLine();
 			} else if (c == tfSelection) {
-				text = tfSelection.getText();
+				if (tfSelection.getSelectedText().length() > 0) {
+					text = tfSelection.getSelectedText();
+				} else {
+					text = tfSelection.getText();
+				}
 			}
 
 			Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -151,7 +155,6 @@ public class MainFrame extends JFrame {
 				removeTreeNode(root, data.getMethod());
 				set.add(data.getMethodName());
 				taExclude.setText(Utils.toString(set));
-				System.out.println(Utils.toString(set));
 			}
 
 			if (node.getParent() != null && node.getChildCount() == 0)

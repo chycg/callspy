@@ -5,8 +5,11 @@ import java.io.FileInputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -27,6 +30,13 @@ public class CallSpy implements ClassFileTransformer {
 
 	private Set<String> imports;
 
+	/**
+	 * 相同方法出现次数
+	 */
+	private int maxCount;
+
+	private Map<String, AtomicInteger> countMap = new HashMap<>();
+
 	public CallSpy(String file) {
 		Properties properties = new Properties();
 		try (FileInputStream fis = new FileInputStream(file);) {
@@ -44,6 +54,9 @@ public class CallSpy implements ClassFileTransformer {
 
 		value = properties.getProperty("showGetter");
 		showGetter = Boolean.valueOf(value);
+
+		value = properties.getProperty("maxCount", "200");
+		maxCount = Integer.parseInt(value);
 
 		value = properties.getProperty("consoleLog"); // 是否输出控制台日志
 		boolean consoleLog = value == null ? true : Boolean.valueOf(value);
@@ -102,6 +115,14 @@ public class CallSpy implements ClassFileTransformer {
 
 						if (showGetter && method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
 							continue;
+
+						String methodName = method.getName();
+						countMap.putIfAbsent(methodName, new AtomicInteger());
+						AtomicInteger counter = countMap.get(methodName);
+						if (counter.getAndIncrement() > maxCount) {
+							System.out.println(methodName + ": count=" + counter.intValue());
+							continue;
+						}
 
 						currentMethod = className + "." + name;
 

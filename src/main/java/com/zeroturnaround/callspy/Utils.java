@@ -67,4 +67,28 @@ public class Utils {
 		return data;
 	}
 
+	public static boolean isEmpty(String s) {
+		return s == null || s.trim().isEmpty();
+	}
+
+	public static <T> boolean isEmpty(T[] array) {
+		return array == null || array.length == 0;
+	}
+
+	public static <T> boolean isNotEmpty(T[] array) {
+		return !isEmpty(array);
+	}
+
+	public static boolean isNotEmpty(String s) {
+		return !isEmpty(s);
+	}
+
+	public static boolean isEmpty(Collection<?> c) {
+		return c == null || c.isEmpty();
+	}
+
+	public static boolean isNotEmpty(Collection<?> c) {
+		return !isEmpty(c);
+	}
+
 }

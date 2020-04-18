@@ -20,7 +20,7 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 	private static final String HighLightTemplate = "<span style='background:rgb(230,230,0);'>$1</span>";
 
-	private static Font font = new Font("Courier New", Font.PLAIN, 14);
+	private static Font font = new Font("微软雅黑", Font.PLAIN, 14);
 
 	private final Pattern p = Pattern.compile("\".*?\"|[a-zA-Z_]+[a-zA-Z0-9_]*");
 
@@ -56,7 +56,7 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 				line = prefix + "<b>" + method + "</b>" + updateColor(suffix);
 
-				String text = "<span style='color:rgb(0,70,0)'>" + renderFilterMatch(node, line) + "</span>";
+				String text = "<span style='color:rgb(0,30,80)'>" + renderFilterMatch(node, line) + "</span>";
 				this.setText("<html>" + text + "</html>");
 				this.setFont(font);
 			}

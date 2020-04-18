@@ -75,8 +75,8 @@ public class CallSpy implements ClassFileTransformer {
 
 	@Override
 	public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
-		if (className == null || className.startsWith("com/zeroturnaround/callspy"))
-			return null;
+		if (className == null || className.startsWith("com/zeroturnaround/callspy") || clazz != null && clazz.isInterface())
+			return bytes;
 
 		for (String e : excludes) {
 			if (e.trim().isEmpty())

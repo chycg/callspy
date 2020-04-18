@@ -26,11 +26,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.JTree;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -43,7 +43,7 @@ public class MainFrame extends JFrame {
 
 	private static final long serialVersionUID = -1266662931999876034L;
 
-	private final String path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
+	private String path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
 	private final char spaceChar = '~';
 
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
@@ -51,6 +51,8 @@ public class MainFrame extends JFrame {
 
 	private JTextField tfFilter;
 	private JTextArea taExclude = new JTextArea(5, 0);
+	private JTextPane taDetail = new JTextPane();
+
 	private JTextField tfSelection = new JTextField();
 
 	private JTree tree = new JTree(model);
@@ -60,7 +62,7 @@ public class MainFrame extends JFrame {
 
 	private Set<String> set = new HashSet<>();
 
-	private Font font = new Font("dialog", Font.PLAIN, 14);
+	private Font font = new Font("微软雅黑", Font.PLAIN, 14);
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -153,7 +155,7 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				removeTreeNode(root, data.getMethod());
-				set.add(data.getMethodName());
+				set.add(data.getMethod().replace('/', '.'));
 				taExclude.setText(Utils.toString(set));
 			}
 
@@ -163,12 +165,20 @@ public class MainFrame extends JFrame {
 	};
 
 	public MainFrame() {
+		this(null);
+	}
+
+	public MainFrame(String path) {
+		if (path != null)
+			this.path = path;
+
 		initLayout();
 		initListener();
 
 		tfFilter.setFont(font);
 		tfSelection.setFont(font);
 		taExclude.setFont(font);
+		taDetail.setFont(font);
 
 		setTitle("trace");
 		setSize(800, 600);
@@ -188,13 +198,21 @@ public class MainFrame extends JFrame {
 		panel.add(tfFilter, BorderLayout.NORTH);
 
 		JPanel bottomPane = new JPanel(new BorderLayout());
-		bottomPane.add(taExclude);
+		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(taDetail), new JScrollPane(taExclude));
+		split.setOneTouchExpandable(true);
+
+		bottomPane.add(split);
 		bottomPane.add(tfSelection, BorderLayout.SOUTH);
-		panel.add(bottomPane, BorderLayout.SOUTH);
 
 		taExclude.setEditable(false);
 
-		panel.add(new JScrollPane(tree));
+		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), bottomPane);
+		rootSplit.setDividerLocation(1200);
+		rootSplit.setOneTouchExpandable(true);
+
+		panel.add(rootSplit);
+		panel.add(bottomPane, BorderLayout.SOUTH);
+
 		this.add(panel);
 
 		parseFile();
@@ -248,6 +266,7 @@ public class MainFrame extends JFrame {
 
 			Node data = (Node) node.getUserObject();
 			tfSelection.setText(data.getCallName());
+			taDetail.setText(data.getLine());
 		});
 
 		JPopupMenu popupMenu = new JPopupMenu();
@@ -352,15 +371,5 @@ public class MainFrame extends JFrame {
 		}
 
 		return 0;
-	}
-
-	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-			e.printStackTrace();
-		}
-
-		new MainFrame();
 	}
 }

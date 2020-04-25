@@ -109,14 +109,14 @@ public class CallSpy implements ClassFileTransformer {
 						if (Modifier.isAbstract(method.getModifiers()))
 							continue;
 
-						String name = method.getName();
-						if (excludeMethod.contains(name))
-							continue;
-
-						if (showGetter && method.getParameterTypes().length == 0 && (name.startsWith("get") || name.startsWith("is")))
-							continue;
-
 						String methodName = method.getName();
+						if (excludeMethod.contains(methodName)
+								|| excludeMethod.contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
+							continue;
+
+						if (showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
+							continue;
+
 						countMap.putIfAbsent(methodName, new AtomicInteger());
 						AtomicInteger counter = countMap.get(methodName);
 						if (counter.getAndIncrement() > maxCount) {
@@ -124,7 +124,7 @@ public class CallSpy implements ClassFileTransformer {
 							continue;
 						}
 
-						currentMethod = className + "." + name;
+						currentMethod = className + "." + methodName;
 
 						String before = showEntry ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
 

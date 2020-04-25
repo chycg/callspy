@@ -8,8 +8,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,13 +21,14 @@ import java.util.function.BiPredicate;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JTree;
@@ -50,7 +51,8 @@ public class MainFrame extends JFrame {
 	private DefaultTreeModel model = new DefaultTreeModel(root);
 
 	private JTextField tfFilter;
-	private JTextArea taExclude = new JTextArea(5, 0);
+	private JButton btnFile = new JButton("New");
+
 	private JTextPane taDetail = new JTextPane();
 
 	private JTextField tfSelection = new JTextField();
@@ -63,6 +65,8 @@ public class MainFrame extends JFrame {
 	private Set<String> set = new HashSet<>();
 
 	private Font font = new Font("微软雅黑", Font.PLAIN, 14);
+
+	private String lastPath;
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -156,11 +160,21 @@ public class MainFrame extends JFrame {
 			if (data != null) {
 				removeTreeNode(root, data.getMethod());
 				set.add(data.getMethod().replace('/', '.'));
-				taExclude.setText(Utils.toString(set));
+				// taExclude.setText(Utils.toString(set));
 			}
 
 			if (node.getParent() != null && node.getChildCount() == 0)
 				model.removeNodeFromParent(node);
+		}
+	};
+
+	private AbstractAction printExcludeAction = new AbstractAction("printExclude") {
+
+		private static final long serialVersionUID = -2683251181036247062L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			System.out.println(Utils.toString(set));
 		}
 	};
 
@@ -177,7 +191,6 @@ public class MainFrame extends JFrame {
 
 		tfFilter.setFont(font);
 		tfSelection.setFont(font);
-		taExclude.setFont(font);
 		taDetail.setFont(font);
 
 		setTitle("trace");
@@ -195,23 +208,21 @@ public class MainFrame extends JFrame {
 
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-		panel.add(tfFilter, BorderLayout.NORTH);
 
-		JPanel bottomPane = new JPanel(new BorderLayout());
-		JSplitPane split = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(taDetail), new JScrollPane(taExclude));
-		split.setOneTouchExpandable(true);
+		JPanel topBar = new JPanel(new BorderLayout());
+		topBar.add(tfFilter);
+		topBar.add(btnFile, BorderLayout.EAST);
 
-		bottomPane.add(split);
-		bottomPane.add(tfSelection, BorderLayout.SOUTH);
+		panel.add(topBar, BorderLayout.NORTH);
+		taDetail.setEditable(false);
 
-		taExclude.setEditable(false);
-
-		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), bottomPane);
-		rootSplit.setDividerLocation(1200);
+		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), new JScrollPane(taDetail));
+		rootSplit.setDividerLocation(1500);
 		rootSplit.setOneTouchExpandable(true);
+		rootSplit.setDividerSize(10);
 
 		panel.add(rootSplit);
-		panel.add(bottomPane, BorderLayout.SOUTH);
+		panel.add(tfSelection, BorderLayout.SOUTH);
 
 		this.add(panel);
 
@@ -224,7 +235,7 @@ public class MainFrame extends JFrame {
 			tree.expandRow(i);
 		}
 
-		tree.setRootVisible(false);
+		// tree.setRootVisible(false);
 	}
 
 	private BiPredicate<Object, String> createUserObjectMatcher() {
@@ -239,19 +250,40 @@ public class MainFrame extends JFrame {
 	}
 
 	private void initListener() {
-		taExclude.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (e.getClickCount() > 1)
-					taExclude.selectAll();
+		// taExclude.addMouseListener(new MouseAdapter() {
+		// @Override
+		// public void mouseClicked(MouseEvent e) {
+		// if (e.getClickCount() > 1)
+		// taExclude.selectAll();
+		// }
+		// });
+
+		btnFile.addActionListener(e -> {
+			JFileChooser dialog = new JFileChooser(lastPath);
+			dialog.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			dialog.showOpenDialog(null);
+			File file = dialog.getSelectedFile();
+			if (file != null) {
+				root.removeAllChildren();
+				model.reload();
+				lastCount = -1;
+				parentNode = root;
+				this.path = file.getAbsolutePath();
+				this.lastPath = path;
+
+				parseFile();
+				tree.expandRow(1);
 			}
 		});
 
 		JPopupMenu popup = new JPopupMenu();
 		popup.add(new JMenuItem(removeAction));
 		popup.add(new JMenuItem(removeMethodAction));
+		popup.addSeparator();
 		popup.add(new JMenuItem(copyAction));
 		popup.add(new JMenuItem(copyMethodAction));
+		popup.addSeparator();
+		popup.add(new JMenuItem(printExcludeAction));
 
 		tree.setComponentPopupMenu(popup);
 
@@ -261,12 +293,21 @@ public class MainFrame extends JFrame {
 				return;
 
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-			if (node == null)
+			if (node == null || node == root)
 				return;
 
 			Node data = (Node) node.getUserObject();
 			tfSelection.setText(data.getCallName());
 			taDetail.setText(data.getLine());
+		});
+
+		tree.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+					removeMethodAction.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "deleteMethod"));
+				}
+			}
 		});
 
 		JPopupMenu popupMenu = new JPopupMenu();

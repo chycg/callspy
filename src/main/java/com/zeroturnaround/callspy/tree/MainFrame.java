@@ -22,6 +22,7 @@ import java.util.function.BiPredicate;
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -178,6 +179,17 @@ public class MainFrame extends JFrame {
 		}
 	};
 
+	private AbstractAction topWindowAction = new AbstractAction("topWindow") {
+
+		private static final long serialVersionUID = 7398038743300735100L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			JCheckBoxMenuItem item = (JCheckBoxMenuItem) e.getSource();
+			MainFrame.this.setAlwaysOnTop(item.isSelected());
+		}
+	};
+
 	public MainFrame() {
 		this(null);
 	}
@@ -282,8 +294,9 @@ public class MainFrame extends JFrame {
 		popup.addSeparator();
 		popup.add(new JMenuItem(copyAction));
 		popup.add(new JMenuItem(copyMethodAction));
-		popup.addSeparator();
 		popup.add(new JMenuItem(printExcludeAction));
+		popup.addSeparator();
+		popup.add(new JCheckBoxMenuItem(topWindowAction));
 
 		tree.setComponentPopupMenu(popup);
 

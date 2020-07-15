@@ -1,0 +1,66 @@
+.pre {
+	min-height: 100px;
+	outline: 1px solid #ccc;
+	padding: 5px;
+	width:100%;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	font-size: 13px;
+}
+
+.left {
+	float:left;
+	width: 90%;
+}
+
+.btn {
+	margin: 10px 0;
+}
+
+.title{
+	font-size: large;
+}
+
+.textcomplete-dropdown > li:not(:first-child ) {
+	/* border-top-style: dotted; */
+	border-width: 1px;
+	border-color: #fff;
+}
+
+.textcomplete-dropdown li {
+	cursor: pointer;
+	font-weight: normal;
+	position: relative;
+	padding: 3px 10px;
+}
+
+li.active {
+	cursor: pointer;
+	font-weight: normal;
+	color: #000;
+	position: relative;
+	padding: 3px 10px;
+	background: #2D8CF0;
+}
+
+.textcomplete-item a {
+	height: 42px;
+	color: #FFF;
+}
+
+span.ex {
+	color: #f00;
+	font-size: large;
+}
+
+#filter input{
+	color:#fff;
+	background-color:transparent;
+	border:unset;
+	border-radius:unset;
+	border-bottom: 1px solid #727b8c;
+}
+
+#filter .ivu-input-icon-clear {
+	color: #cdd1dc;
+}

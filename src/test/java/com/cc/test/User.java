@@ -1,4 +1,4 @@
-package com.cc;
+package com.cc.test;
 
 import java.time.LocalDate;
 

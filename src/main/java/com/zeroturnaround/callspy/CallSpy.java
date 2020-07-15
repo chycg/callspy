@@ -22,6 +22,7 @@ public class CallSpy implements ClassFileTransformer {
 	private Set<String> includes;
 	private Set<String> excludes;
 	private Set<String> excludeMethod;
+	private Set<String> excludeClass;
 
 	private boolean showEntry;
 	private boolean showGetter;
@@ -48,6 +49,7 @@ public class CallSpy implements ClassFileTransformer {
 		includes = Utils.splitString(properties.getProperty("include"));
 		excludes = Utils.splitString(properties.getProperty("exclude"));
 		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
+		excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
 
 		String value = properties.getProperty("showEntry"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
@@ -89,7 +91,7 @@ public class CallSpy implements ClassFileTransformer {
 				Name = name.substring(index + 1, name.length());
 			}
 
-			if (name.startsWith(e) || Name != null && e.endsWith(Name))
+			if (name.startsWith(e) || Name != null && e.endsWith(Name) || excludeClass.contains(Name))
 				return bytes;
 		}
 

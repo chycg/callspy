@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>test-interface</title>
+
+    <link rel="stylesheet" href="static/iview.css">
+    <link rel="stylesheet" href="static/jsonview.min.css" />
+    <link rel="stylesheet" href="static/test.css">
+    <link rel="stylesheet" href="static/prism.css" />
+
+    <script src="https://cdn.bootcss.com/vue/2.5.21/vue.min.js"></script>
+    <script src="static/iview.min.js"></script>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+    <script src="static/jquery.jsonview.js"></script>
+    <script src="static/test.js"></script>
+    <script src="static/prism.js"></script>
+    <script src="static/auto.js"></script>
+</head>
+
+<body>
+    <div id="test">
+        <Modal v-model="dialog" title="输入" @on-ok="okInput" @on-cancel="cancelInput">
+            <i-input v-model="inputValue" placeholder="输入内容" size="large" minlength="1"></i-input>
+        </Modal>
+
+        <Sider style="position:fixed; overflow:auto; height:100vh; width:19%; max-width:20%;">
+            <i-input id="filter" v-model="filter" prefix="ios-funnel" @on-change="onFilter" clearable></i-input>
+            <i-row style="float:left">
+                <i-menu ref="leftMenu" theme="dark" style="width:350px" @on-select="onSelect" :accordion="effect" :open-names="open">
+
+                    <Menu-item name="configs" style="padding:8px 24px">全局配置</Menu-item>
+
+                    <Menu-group title="常用接口" v-show="oftenSize && oftenSize > 0 && showedItems2 && showedItems2.length > 0">
+                        <Submenu v-for="(c,i) in showedItems2" :name="'0' + c.name">
+                            <template slot="title">{{c.name}}</template>
+                            <Menu-item v-for="(m,k) in c.methods" :name="'0' + c.name + '.' + m" style="padding:8px 24px">
+                                {{k+1}}. {{m}}
+                            </Menu-item>
+                        </Submenu>
+                    </Menu-group>
+
+                    <Menu-group title="全部接口" v-show="showedItems.length > 0">
+                        <Submenu v-for="(c,i) in showedItems" :name="'1' + c.name">
+                            <template slot="title"> {{i+1}}. {{c.name}}</template>
+                            <Menu-item v-for="(m,k) in c.methods" :name="'1' + c.name + '.' + m" style="padding:8px 24px">
+                                {{m}}
+                            </Menu-item>
+                        </Submenu>
+                    </Menu-group>
+                </i-menu>
+            </i-row>
+        </Sider>
+
+        <div style="float:left; padding:10px 20px 10px 20%; width: 100%;">
+            <!-- configs -->
+            <div id="configs" v-if="config">
+                <p slot="title" class="title">全局配置</p>
+                <Tabs v-model="configTab" value="tab1" @on-click="onTab2">
+                    <Tab-pane label="属性项" name="tab1">
+                        <i-form label-position="left" :label-width="120" autocomplete="on" style="width:600px">
+                            <Form-Item label="菜单展开收缩">
+                                <i-switch v-model="effect"  @on-change="onEffect"></i-switch>
+                            </Form-Item>
+                            <Form-Item label="常用接口数量">
+                                <i-input v-model="oftenSize" @on-change="onOftenSize" size="large" :max="10" :min="0"></i-input>
+                            </Form-Item>
+                            <Form-Item label="Facade位置">
+                            	<div style="width:440px;float:left">
+	                            	<i-select v-model="path" @on-change="onLoadIface" size="large" clearable filterable>
+	                            		<i-option v-for="p in pathList" :value="p">{{ p }}</i-option>
+	                            	</i-select>
+                            	</div>
+                            	
+	                            <i-button @click="onAddPath()" type="success" title="新增Facade位置">+</i-button>
+                            </Form-Item>
+                            <Form-Item label="预发环境">
+                                <i-switch v-model="preMode" @on-change="onPreMode"></i-switch>
+                            </Form-Item>
+
+                            <Form-Item label="服务器地址" v-show="!preMode">
+                                <i-input v-model="rpcUrl" @on-blur="onRpcUrl" placeholder="地址端口" size="large" style="width:440px;float:left"></i-input>
+                            </Form-Item>
+                            
+                            <Form-Item label="RPC URL">
+                                <span style="font-size: medium;">{{rpcUrl.indexOf("http") >= 0 ? "" : "http://"}}{{rpcUrl.trim()}}</span>
+                            </Form-Item>
+                            
+                            <Form-Item label="结果输出路径">
+                                <a href="/db" target="_blank"><span style="font-size: medium;">{{testLog}}</span></a>
+                            </Form-Item>
+
+                            <Form-Item label="账号token">
+                                <i-input v-model="userToken" @on-blur="onUserToken" placeholder="登录账号token" size="large"></i-input>
+                            </Form-Item>
+                        </i-form>
+                    </Tab-pane>
+
+                    <Tab-pane label="常用接口" name="tab2">
+                    	<div style="padding: 20px; border-bottom: ridge"> <span style="padding-right: 20px;">常用接口管理:</span>
+	                        <Tag v-for="c in classInfo2" closable color="primary" type="dot" @on-close="removeOften">
+	                            {{c.name}}
+	                        </Tag>
+                    	</div>
+                        
+                        <div style="padding: 20px;border-bottom: ridge"> <span style="padding-right: 20px;">路径管理:</span> 
+	                        <Tag v-for="p in pathList" v-if="p != path" closable color="success" type="dot" @on-close="removePath">
+	                            {{p}}
+	                        </Tag>
+                        </div>
+                    </Tab-pane>
+
+                    <Tab-pane label="自动测试" name="tabTestAll">
+                        <div class="btn">
+                            <i-button @click="onTestOk()" type="success">正常测试</i-button>
+                            <i-button @click="onTestError()" type="warning">错误测试</i-button>
+                            <i-button @click="onClearLog()" type="primary">清空日志</i-button>
+                        </div>
+
+                        <div style="width:95%; margin-left:2px">
+                            <textarea id="testAllResult" class="pre" rows="20" readonly></textarea>
+                        </div>
+                    </Tab-pane>
+
+                    <Tab-pane label="Tips" name="tab3">
+                        <Row>
+                            <Col>
+                            <Card>
+                                <p slot="title">入参调整</p>
+                                <p><span class="ex">Ctrl + 鼠标左键双击</span>可删除相应字段；点击参数还原能恢复入参默认结构</p>
+                            </Card>
+                            </Col>
+                        </Row>
+                    </Tab-pane>
+                </Tabs>
+            </div>
+
+            <!-- main content -->
+            <div v-else id="tester">
+                <p slot="title" class="title" style="margin:10px">
+                    <span v-show="!hasNoMethod()">{{methodInfo}} - ({{methodType}} {{methodPath}}) {{methodComment}} </span>
+                </p>
+
+                <Tabs v-model="tabValue" @on-click="onTab">
+                    <Tab-pane label="接口测试" name="tab4">
+                        <div style="width:95%;margin-left:2px">
+                            <pre id="args" contenteditable="true" class="pre" v-on:dblclick="changeArgs"></pre>
+                        </div>
+
+                        <div class="btn">
+                            <i-button @click="onTest()" type="primary">提交测试</i-button>
+                            <i-button @click="onClear()" type="success">参数还原</i-button>
+                        </div>
+
+                        <div style="width:95%;margin-left:2px">
+                            <pre id="result" class="pre"></pre>
+                        </div>
+                    </Tab-pane>
+
+                    <Tab-pane label="接口注释" name="tab5">
+                        <i-form label-position="left" :label-width="120" style="width:720px">
+                            <Form-Item label="token">
+                                <i-input v-model="token" @on-blur="onToken" placeholder="project token" size="large"></i-input>
+                            </Form-Item>
+
+                            <Form-Item label="分类菜单" v-show="token.length > 60">
+                                <i-select v-model="catId" @on-change="onLoadApis" size="large" style="width:80%; margin-right:10px">
+                                    <i-option v-for="m in menus" :value="m.id">{{ m.name }}</i-option>
+                                </i-select>
+                                <i-button @click="onCate()" type="success">新增分类</i-button>
+                            </Form-Item>
+
+                            <Form-Item label="接口菜单" v-show="token.length > 60 && !hasNoMethod()">
+                                <i-select disabled v-model="apiId" size="large" style="width:80%; margin-right:10px">
+                                    <i-option v-for="s in submenus" :value="s.id">{{ s.name }}</i-option>
+                                </i-select>
+                                <i-button @click="onApi()" type="primary">新增接口</i-button>
+                            </Form-Item>
+                        </i-form>
+
+                        <div style="width:95%;margin-left:2px">
+                            <pre id="docs" contenteditable="true" class="pre"></pre>
+                        </div>
+                    </Tab-pane>
+                </Tabs>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

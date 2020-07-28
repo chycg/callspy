@@ -1,4 +1,4 @@
-package com.zeroturnaround.callspy;
+package com.cc;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,7 +13,7 @@ public class Stack {
 
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
-	static void init(boolean consoleLog, String indent, String filePath) {
+	public static void init(boolean consoleLog, String indent, String filePath) {
 		Stack.consoleLog = consoleLog;
 		Stack.indent = indent == null ? "~" : indent;
 		Stack.filePath = filePath;

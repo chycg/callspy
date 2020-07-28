@@ -1,4 +1,4 @@
-package com.zeroturnaround.callspy;
+package com.cc.spy;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -10,6 +10,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import com.cc.Stack;
+import com.cc.Utils;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -21,6 +25,8 @@ public class CallSpy implements ClassFileTransformer {
 
 	private Set<String> includes;
 	private Set<String> excludes;
+
+	private Set<String> excludeClass;
 	private Set<String> excludeMethod;
 
 	private boolean showEntry;
@@ -47,6 +53,16 @@ public class CallSpy implements ClassFileTransformer {
 
 		includes = Utils.splitString(properties.getProperty("include"));
 		excludes = Utils.splitString(properties.getProperty("exclude"));
+
+		Set<String> packages = excludes.stream().filter(e -> !e.contains(".")).collect(Collectors.toSet());
+		excludes.removeAll(packages);
+		for (String e : includes) {
+			for (String p : packages) {
+				excludes.add(e + "." + p);
+			}
+		}
+
+		excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
 		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
 
 		String value = properties.getProperty("showEntry"); // 是否显示方法进入
@@ -63,7 +79,7 @@ public class CallSpy implements ClassFileTransformer {
 
 		String importsValue = properties.getProperty("imports");
 		imports = Utils.splitString(importsValue);
-		imports.add("com.zeroturnaround.callspy");
+		imports.add("com.cc");
 
 		String indent = properties.getProperty("indent");
 		String path = properties.getProperty("filePath");
@@ -75,7 +91,7 @@ public class CallSpy implements ClassFileTransformer {
 
 	@Override
 	public byte[] transform(ClassLoader loader, String className, Class<?> clazz, ProtectionDomain domain, byte[] bytes) {
-		if (className == null || className.startsWith("com/zeroturnaround/callspy") || clazz != null && clazz.isInterface())
+		if (className == null || className.startsWith("com/cc/spy") || clazz != null && clazz.isInterface())
 			return bytes;
 
 		for (String e : excludes) {
@@ -83,13 +99,13 @@ public class CallSpy implements ClassFileTransformer {
 				continue;
 
 			String name = className.replace('/', '.');
+			int index = name.lastIndexOf('.');
 			String Name = null;
-			if (e.charAt(0) >= 65 && e.charAt(0) <= 97) {
-				int index = name.lastIndexOf('.');
+			if (index > 0) {
 				Name = name.substring(index + 1, name.length());
 			}
 
-			if (name.startsWith(e) || Name != null && e.endsWith(Name))
+			if (name.startsWith(e) || Name != null && (e.endsWith(Name) || e.contains(Name + "$") || excludeClass.contains(Name)))
 				return bytes;
 		}
 
@@ -114,7 +130,7 @@ public class CallSpy implements ClassFileTransformer {
 								|| excludeMethod.contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
 							continue;
 
-						if (showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
+						if (!showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
 							continue;
 
 						countMap.putIfAbsent(methodName, new AtomicInteger());

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-	xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.zeroturnaround</groupId>
 	<artifactId>callspy</artifactId>
@@ -28,34 +26,22 @@
 			<version>4.11</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy</artifactId>
+			<version>1.5.7</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.bytebuddy</groupId>
+			<artifactId>byte-buddy-agent</artifactId>
+			<version>1.5.7</version>
+		</dependency>
 	</dependencies>
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<descriptors>
-						<descriptor>assembly-dyn.xml</descriptor>
-					</descriptors>
-					<archive>
-						<manifestEntries>
-							<Can-Redefine-Classes>true</Can-Redefine-Classes>
-							<Premain-Class>com.zeroturnaround.callspy.Agent</Premain-Class>
-						</manifestEntries>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.6.1</version>
@@ -65,6 +51,62 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-assembly</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors>
+								<descriptor>assembly-dyn.xml</descriptor>
+							</descriptors>
+							<!-- <descriptorRefs> <descriptorRef>jar-with-dependencies</descriptorRef> </descriptorRefs> -->
+							<archive>
+								<manifestEntries>
+									<Can-Redefine-Classes>true</Can-Redefine-Classes>
+									<Premain-Class>com.cc.spy.Agent</Premain-Class>
+								</manifestEntries>
+							</archive>
+						</configuration>
+					</execution>
+					
+					<execution>
+						<id>make-assembly2</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+
+						<configuration>
+							<descriptors>
+								<descriptor>assembly-dyn2.xml</descriptor>
+							</descriptors>
+							<archive>
+								<manifestEntries>
+									<Can-Redefine-Classes>true</Can-Redefine-Classes>
+									<Premain-Class>com.cc.spy2.Agent</Premain-Class>
+								</manifestEntries>
+							</archive>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-shade-plugin</artifactId> <executions> <execution> <phase>package</phase> 
+				<goals> <goal>shade</goal> </goals> <configuration> <artifactSet> <includes> <include>javassist:javassist:jar:</include> <include>net.bytebuddy:byte-buddy:jar:</include> 
+				<include>net.bytebuddy:byte-buddy-agent:jar:</include> </includes> </artifactSet> <transformers> <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"> 
+				<mainClass>cn.dubby.maven.shade.plugin.Main</mainClass> <manifestEntries> <Can-Redefine-Classes>true</Can-Redefine-Classes> <Premain-Class>com.agent.MyAgent</Premain-Class> 
+				</manifestEntries> </transformer> </transformers> </configuration> </execution> </executions> </plugin> -->
+
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> <version>2.3.2</version> <configuration> 
+				<archive> <index>true</index> <manifestFile>src/main/resources/META-INF/MANIFEST.MF </manifestFile> <manifest> <addDefaultImplementationEntries 
+				/> </manifest> </archive> </configuration> </plugin> -->
 		</plugins>
 	</build>
 </project>

@@ -1,4 +1,4 @@
-package com.zeroturnaround.callspy.tree;
+package com.cc.tree;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -39,7 +39,7 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import com.zeroturnaround.callspy.Utils;
+import com.cc.Utils;
 
 public class MainFrame extends JFrame {
 

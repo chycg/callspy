@@ -1,8 +1,8 @@
-package com.zeroturnaround.callspy;
+package com.cc.tree;
 
 import javax.swing.UIManager;
 
-import com.zeroturnaround.callspy.tree.MainFrame;
+import com.cc.Utils;
 
 public class TraceTree {
 

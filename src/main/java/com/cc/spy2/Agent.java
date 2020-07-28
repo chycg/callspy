@@ -37,6 +37,11 @@ public class Agent {
 	static Set<String> imports;
 
 	/**
+	 * 显示方法类型而非参数值，默认false
+	 */
+	static boolean showArgType;
+
+	/**
 	 * 相同方法出现次数
 	 */
 	static int maxCount;

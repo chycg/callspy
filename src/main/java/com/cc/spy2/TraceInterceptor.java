@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.cc.Stack;
 
+import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
 import net.bytebuddy.implementation.bind.annotation.RuntimeType;
 import net.bytebuddy.implementation.bind.annotation.SuperCall;
@@ -13,26 +14,28 @@ import net.bytebuddy.implementation.bind.annotation.SuperCall;
 public class TraceInterceptor {
 
 	@RuntimeType
-	public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable) throws Exception {
+	public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable, @AllArguments Object[] arguments) throws Exception {
 		boolean need = needTrace(method);
 		Class<?> clz = method.getDeclaringClass();
 		String currentMethod = clz.getName() + "." + method.getName();
 
+		Object[] args = Agent.showArgType ? method.getParameterTypes() : arguments;
+
 		if (need) {
 			if (Agent.showEntry) {
-				Stack.push(currentMethod, method.getParameterTypes());
+				Stack.push(currentMethod, args);
 			} else {
 				Stack.push();
 			}
 		}
 
-		Object o = callable.call();
+		Object result = callable.call();
 		if (need) {
-			Stack.log(currentMethod, method.getParameterTypes(), o);
+			Stack.log(currentMethod, args, result);
 			Stack.pop();
 		}
 
-		return o;
+		return result;
 	}
 
 	private static boolean needTrace(Method method) {

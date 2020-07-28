@@ -343,9 +343,14 @@ public class MainFrame extends JFrame {
 	}
 
 	private void parseFile() {
+		File file = new File(path);
+		if (!file.exists()) {
+			System.out.println(path + " not exists");
+			return;
+		}
 
 		try {
-			List<String> list = Files.readAllLines(Paths.get(new File(path).toURI()));
+			List<String> list = Files.readAllLines(Paths.get(file.toURI()));
 			setTitle("Trace-" + list.get(0));
 
 			String line = "";

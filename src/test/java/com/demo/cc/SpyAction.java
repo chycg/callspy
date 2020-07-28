@@ -1,4 +1,6 @@
-package com.demo;
+package com.demo.cc;
+
+import com.demo.User;
 
 public class SpyAction {
 

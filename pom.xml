@@ -5,7 +5,6 @@
 	<groupId>com.cc</groupId>
 	<artifactId>spy</artifactId>
 	<version>0.1</version>
-	<inceptionYear>2018</inceptionYear>
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
@@ -60,7 +59,6 @@
 							<descriptors>
 								<descriptor>assembly-dyn.xml</descriptor>
 							</descriptors>
-							<!-- <descriptorRefs> <descriptorRef>jar-with-dependencies</descriptorRef> </descriptorRefs> -->
 							<archive>
 								<manifestEntries>
 									<Can-Redefine-Classes>true</Can-Redefine-Classes>
@@ -69,7 +67,7 @@
 							</archive>
 						</configuration>
 					</execution>
-					
+
 					<execution>
 						<id>make-assembly2</id>
 						<phase>package</phase>
@@ -81,6 +79,13 @@
 							<descriptors>
 								<descriptor>assembly-dyn2.xml</descriptor>
 							</descriptors>
+
+							<descriptorRefs>
+								<descriptorRef>jar-with-dependencies</descriptorRef>
+							</descriptorRefs>
+							<finalName>spy-0.2</finalName>
+							<appendAssemblyId>false</appendAssemblyId> <!-- 不采用默认命名规则 -->
+
 							<archive>
 								<manifestEntries>
 									<Can-Redefine-Classes>true</Can-Redefine-Classes>

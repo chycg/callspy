@@ -45,7 +45,7 @@ public class MainFrame extends JFrame {
 
 	private static final long serialVersionUID = -1266662931999876034L;
 
-	private String path = "D:\\Git\\callspy\\src\\main\\java\\com\\zeroturnaround\\callspy\\user.log.1";
+	private String path = "";
 	private final char spaceChar = '~';
 
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
@@ -67,7 +67,7 @@ public class MainFrame extends JFrame {
 
 	private Font font = new Font("微软雅黑", Font.PLAIN, 14);
 
-	private String lastPath;
+	private String lastPath = "d:/";
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 

@@ -3,8 +3,14 @@ package com.cc;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public class Utils {
+
+	/**
+	 * 是否显示入参/返参类型而非取值
+	 */
+	static boolean showParamType;
 
 	public static String toString(String[] args) {
 		return toString((Object[]) args);
@@ -17,9 +23,15 @@ public class Utils {
 		StringBuilder sb = new StringBuilder();
 		if (args != null && args.length > 0) {
 			for (Object arg : args) {
-				String prefix = arg instanceof String ? "\"" : "";
+				String text;
+				String prefix = "";
+				if (arg == null) {
+					text = null;
+				} else {
+					prefix = arg instanceof String ? "\"" : "";
+					text = toString(arg);
+				}
 
-				String text = arg == null ? null : arg.toString();
 				if (arg != null && arg.getClass().isArray()) {
 					Class<?> elementType = arg.getClass().getComponentType();
 					text = elementType.getName() + "[]";
@@ -32,6 +44,36 @@ public class Utils {
 		}
 
 		return sb.toString();
+	}
+
+	public static String[] getArgTypes(Object[] args) {
+		if (args == null || args.length == 0)
+			return new String[0];
+
+		StringBuilder sb = new StringBuilder();
+		if (args != null && args.length > 0) {
+			for (Object arg : args) {
+				String text;
+				String prefix = "";
+				if (arg == null) {
+					text = null;
+				} else {
+					prefix = arg instanceof String ? "\"" : "";
+					text = "<" + arg.getClass().getSimpleName() + ">";
+				}
+
+				if (arg != null && arg.getClass().isArray()) {
+					Class<?> elementType = arg.getClass().getComponentType();
+					text = elementType.getName() + "[]";
+				}
+
+				sb.append(prefix).append(text).append(prefix).append(",");
+			}
+
+			sb.deleteCharAt(sb.length() - 1);
+		}
+
+		return new String[] { sb.toString() };
 	}
 
 	public static String toString(Collection<?> c) {
@@ -89,6 +131,23 @@ public class Utils {
 
 	public static boolean isNotEmpty(Collection<?> c) {
 		return !isEmpty(c);
+	}
+
+	public static String toString(Object v) {
+		if (v == null)
+			return null;
+
+		if (v.getClass().getName().startsWith("java"))
+			return v.toString();
+
+		return showParamType ? "<" + v.getClass().getSimpleName() + ">" : v.toString();
+	}
+
+	public static boolean isContain(Object o, Object... values) {
+		if (o == null || isEmpty(values))
+			return false;
+
+		return Stream.of(values).anyMatch(e -> o.equals(e));
 	}
 
 }

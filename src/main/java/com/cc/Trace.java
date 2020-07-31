@@ -66,6 +66,10 @@ public class Trace {
 		}
 	}
 
+	public int getDepth() {
+		return initIndent.length();
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

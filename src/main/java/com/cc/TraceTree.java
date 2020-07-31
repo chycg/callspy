@@ -1,8 +1,8 @@
-package com.cc.tree;
+package com.cc;
 
 import javax.swing.UIManager;
 
-import com.cc.Utils;
+import com.cc.tree.MainFrame;
 
 public class TraceTree {
 

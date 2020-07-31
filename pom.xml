@@ -59,6 +59,10 @@
 							<descriptors>
 								<descriptor>assembly-dyn.xml</descriptor>
 							</descriptors>
+
+							<finalName>spy-0.1</finalName>
+							<appendAssemblyId>false</appendAssemblyId>
+
 							<archive>
 								<manifestEntries>
 									<Can-Redefine-Classes>true</Can-Redefine-Classes>
@@ -76,15 +80,15 @@
 						</goals>
 
 						<configuration>
-							<descriptors>
-								<descriptor>assembly-dyn2.xml</descriptor>
-							</descriptors>
-
+							<finalName>spy-0.2</finalName>
+							<appendAssemblyId>false</appendAssemblyId> <!-- 不采用默认命名规则 -->
 							<descriptorRefs>
 								<descriptorRef>jar-with-dependencies</descriptorRef>
 							</descriptorRefs>
-							<finalName>spy-0.2</finalName>
-							<appendAssemblyId>false</appendAssemblyId> <!-- 不采用默认命名规则 -->
+
+							<descriptors>
+								<descriptor>assembly-dyn2.xml</descriptor>
+							</descriptors>
 
 							<archive>
 								<manifestEntries>

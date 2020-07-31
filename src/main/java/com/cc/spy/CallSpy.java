@@ -1,19 +1,15 @@
 package com.cc.spy;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.reflect.Modifier;
 import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
+import com.cc.Config;
 import com.cc.Stack;
-import com.cc.Utils;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -23,70 +19,15 @@ import javassist.NotFoundException;
 
 public class CallSpy implements ClassFileTransformer {
 
-	private Set<String> includes;
-	private Set<String> excludes;
-
-	private Set<String> excludeClass;
-	private Set<String> excludeMethod;
-
-	private boolean showEntry;
-	private boolean showGetter;
+	private Config config;
 
 	private String currentMethod;
-
-	private Set<String> imports;
-
-	/**
-	 * 相同方法出现次数
-	 */
-	private int maxCount;
 
 	private Map<String, AtomicInteger> countMap = new HashMap<>();
 
 	public CallSpy(String file) {
-		Properties properties = new Properties();
-		try (FileInputStream fis = new FileInputStream(file);) {
-			properties.load(fis);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		includes = Utils.splitString(properties.getProperty("include"));
-		excludes = Utils.splitString(properties.getProperty("exclude"));
-
-		Set<String> packages = excludes.stream().filter(e -> !e.contains(".")).collect(Collectors.toSet());
-		excludes.removeAll(packages);
-		for (String e : includes) {
-			for (String p : packages) {
-				excludes.add(e + "." + p);
-			}
-		}
-
-		excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
-		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
-
-		String value = properties.getProperty("showEntry"); // 是否显示方法进入
-		showEntry = Boolean.valueOf(value);
-
-		value = properties.getProperty("showGetter");
-		showGetter = Boolean.valueOf(value);
-
-		value = properties.getProperty("maxCount", "200");
-		maxCount = Integer.parseInt(value);
-
-		value = properties.getProperty("consoleLog"); // 是否输出控制台日志
-		boolean consoleLog = value == null ? true : Boolean.valueOf(value);
-
-		String importsValue = properties.getProperty("imports");
-		imports = Utils.splitString(importsValue);
-		imports.add("com.cc");
-
-		String indent = properties.getProperty("indent");
-		String path = properties.getProperty("filePath");
-		if (path == null)
-			path = "user.log";
-
-		Stack.init(consoleLog, indent, path);
+		config = new Config(file);
+		Stack.init(config);
 	}
 
 	@Override
@@ -94,7 +35,7 @@ public class CallSpy implements ClassFileTransformer {
 		if (className == null || className.startsWith("com/cc/spy") || clazz != null && clazz.isInterface())
 			return bytes;
 
-		for (String e : excludes) {
+		for (String e : config.getExcludes()) {
 			if (e.trim().isEmpty())
 				continue;
 
@@ -105,16 +46,16 @@ public class CallSpy implements ClassFileTransformer {
 				Name = name.substring(index + 1, name.length());
 			}
 
-			if (name.startsWith(e) || Name != null && (e.endsWith(Name) || e.contains(Name + "$") || excludeClass.contains(Name)))
+			if (name.startsWith(e) || Name != null && (e.endsWith(Name) || e.contains(Name + "$") || config.getExcludeClass().contains(Name)))
 				return bytes;
 		}
 
 		ClassPool cp = ClassPool.getDefault();
-		for (String item : imports) {
+		for (String item : config.getImports()) {
 			cp.importPackage(item);
 		}
 
-		for (String s : includes) {
+		for (String s : config.getIncludes()) {
 			if (className.replace('/', '.').startsWith(s)) {
 				CtClass ct = null;
 				try {
@@ -126,23 +67,24 @@ public class CallSpy implements ClassFileTransformer {
 							continue;
 
 						String methodName = method.getName();
-						if (excludeMethod.contains(methodName)
-								|| excludeMethod.contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
+						if (config.getExcludeMethod().contains(methodName)
+								|| config.getExcludeMethod().contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
 							continue;
 
-						if (!showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
+						if (!config.isShowGetter() && method.getParameterTypes().length == 0
+								&& (methodName.startsWith("get") || methodName.startsWith("is")))
 							continue;
 
 						countMap.putIfAbsent(methodName, new AtomicInteger());
 						AtomicInteger counter = countMap.get(methodName);
-						if (counter.getAndIncrement() > maxCount) {
+						if (counter.getAndIncrement() > config.getMaxCount()) {
 							System.out.println(methodName + ": count=" + counter.intValue());
 							continue;
 						}
 
 						currentMethod = className + "." + methodName;
 
-						String before = showEntry ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
+						String before = config.isShowEntry() ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
 
 						method.insertBefore(before);
 

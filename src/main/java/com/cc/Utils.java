@@ -147,6 +147,16 @@ public class Utils {
 		if (o == null || isEmpty(values))
 			return false;
 
-		return Stream.of(values).anyMatch(e -> o.equals(e));
+		try {
+			return Stream.of(values).anyMatch(e -> o.equals(e));
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println(o + ", values.size = " + values.length + ", v0 = " + values[0]);
+		} catch (Error ex) {
+			ex.printStackTrace();
+			System.out.println(o + ", values.size = " + values.length + ", v0 = " + values[0]);
+		}
+
+		return false;
 	}
 }

@@ -1,8 +1,20 @@
 package com.cc;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Method;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Config {
@@ -44,9 +56,30 @@ public class Config {
 
 	private String path;
 
+	/**
+	 * 重复出现的方法与次数
+	 */
+	private Map<String, AtomicInteger> countMap = new HashMap<>();
+
+	/**
+	 * 循环调用方法记录，循环方法不再记录日志
+	 */
+	private Set<String> loopMethods = new HashSet<>();
+
+	private WatchService watcher;
+
 	public Config(String args) {
+		File file = new File(args);
+		init(file);
+		initListener(file);
+	}
+
+	/**
+	 * @param file
+	 */
+	private void init(File file) {
 		Properties properties = new Properties();
-		try (FileInputStream fis = new FileInputStream(args);) {
+		try (FileInputStream fis = new FileInputStream(file)) {
 			properties.load(fis);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -90,9 +123,76 @@ public class Config {
 		imports = Utils.splitString(properties.getProperty("imports"));
 
 		indent = properties.getProperty("indent");
-		path = properties.getProperty("filePath");
-		if (path == null)
-			path = "user.log";
+		path = properties.getProperty("filePath", "user.log");
+	}
+
+	private void initListener(File file) {
+		try {
+			watcher = FileSystems.getDefault().newWatchService();
+			Path path = file.toPath();
+			path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
+
+			while (true) {
+				WatchKey key = watcher.take();
+				for (WatchEvent<?> event : key.pollEvents()) {
+					WatchEvent.Kind<?> kind = event.kind();
+					if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+						init(file);
+						break;
+					}
+				}
+
+				if (!key.reset()) {
+					break;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public boolean needTrace(Method method) {
+		String methodName = method.getName();
+
+		if (isBasicMethod(methodName) || loopMethods.contains(methodName))
+			return false;
+
+		if (!showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
+			return false;
+
+		String name = method.getDeclaringClass().getName();
+		if (getExcludes().stream().anyMatch(e -> name.startsWith(e)))
+			return false;
+
+		int index = name.lastIndexOf('.');
+		String Name = null;
+		if (index > 0) {
+			Name = name.substring(index + 1, name.length());
+		}
+
+		if (getExcludeClass().contains(Name))
+			return false;
+
+		if (excludeMethod.contains(methodName) || excludeMethod.contains(Name + "." + methodName))
+			return false;
+
+		String key = Name + "." + methodName;
+		countMap.putIfAbsent(key, new AtomicInteger());
+		int count = countMap.get(key).get();
+		if (count > maxCount) {
+			System.out.println(key + ": count=" + count);
+			return false;
+		}
+
+		return includes.stream().anyMatch(e -> name.startsWith(e));
+	}
+
+	private boolean isBasicMethod(String methodName) {
+		return Utils.isContain(methodName, "toString", "hashCode", "equals", "wait", "clone");
+	}
+
+	public void addLoopMethod(String methodName) {
+		loopMethods.add(methodName);
 	}
 
 	public Set<String> getIncludes() {

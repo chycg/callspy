@@ -149,5 +149,4 @@ public class Utils {
 
 		return Stream.of(values).anyMatch(e -> o.equals(e));
 	}
-
 }

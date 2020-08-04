@@ -72,7 +72,7 @@ public class Config {
 		value = properties.getProperty("showGetter");
 		showGetter = Boolean.valueOf(value);
 
-		value = properties.getProperty("maxCount", "100");
+		value = properties.getProperty("maxCount", "50");
 		maxCount = Integer.parseInt(value);
 
 		value = properties.getProperty("maxDepth", "50");

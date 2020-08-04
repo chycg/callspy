@@ -33,6 +33,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JTree;
+import javax.swing.SwingWorker;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -217,6 +218,8 @@ public class MainFrame extends JFrame {
 		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
 		tfFilter = filterDecorator.getFilterField();
 		tree.setCellRenderer(new TreeNodeRenderer(() -> tfFilter.getText()));
+		tree.putClientProperty("JTree.lineStyle", "Horizontal");
+		tree.setRowHeight(24);
 
 		JPanel panel = new JPanel(new BorderLayout());
 		panel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -239,13 +242,9 @@ public class MainFrame extends JFrame {
 		this.add(panel);
 
 		parseFile();
-
-		tree.putClientProperty("JTree.lineStyle", "Horizontal");
-		tree.setRowHeight(24);
-
-		for (int i = 0; i < tree.getRowCount(); i++) {
-			tree.expandRow(i);
-		}
+		// for (int i = 0; i < tree.getRowCount(); i++) {
+		// tree.expandRow(i);
+		// }
 
 		// tree.setRootVisible(false);
 	}
@@ -343,40 +342,48 @@ public class MainFrame extends JFrame {
 	}
 
 	private void parseFile() {
-		File file = new File(path);
-		if (!file.exists()) {
-			System.out.println(path + " not exists");
-			return;
-		}
+		new SwingWorker<Object, Object>() {
 
-		try {
-			List<String> list = Files.readAllLines(Paths.get(file.toURI()));
-			setTitle("Trace-" + list.get(0));
-
-			String line = "";
-			for (int i = 2; i < list.size(); i++) {
-				String e = list.get(i);
-				if (!e.startsWith("~"))
-					continue;
-
-				line += e;
-
-				int k = i + 1;
-				while (k < list.size()) {
-					String nextLine = list.get(k);
-					if (nextLine.startsWith("~"))
-						break;
-
-					line += nextLine;
-					k++;
+			@Override
+			protected Object doInBackground() throws Exception {
+				File file = new File(path);
+				if (!file.exists()) {
+					System.out.println(path + " not exists");
+					return null;
 				}
 
-				addNode(line);
-				line = "";
+				try {
+					List<String> list = Files.readAllLines(Paths.get(file.toURI()));
+					setTitle("Trace-" + list.get(0));
+
+					String line = "";
+					for (int i = 2; i < list.size(); i++) {
+						String e = list.get(i);
+						if (!e.startsWith("~"))
+							continue;
+
+						line += e;
+
+						int k = i + 1;
+						while (k < list.size()) {
+							String nextLine = list.get(k);
+							if (nextLine.startsWith("~"))
+								break;
+
+							line += nextLine;
+							k++;
+						}
+
+						addNode(line);
+						line = "";
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				return null;
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		}.execute();
 	}
 
 	private void addNode(String line) {

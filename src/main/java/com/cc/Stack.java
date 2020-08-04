@@ -93,9 +93,12 @@ public class Stack {
 	 * @param returnValue
 	 */
 	public static void loopLog(String method, Object[] args, Object returnValue) {
-		returnValue = "<" + returnValue.getClass().getSimpleName() + ">";
-		args = Utils.getArgTypes(args);
+		if (returnValue == null)
+			returnValue = "null";
+		else
+			returnValue = "<" + returnValue.getClass().getSimpleName() + ">";
 
+		args = Utils.getArgTypes(args);
 		log(method, args, returnValue);
 	}
 }

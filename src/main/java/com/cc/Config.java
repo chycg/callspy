@@ -66,8 +66,6 @@ public class Config {
 	 */
 	private Set<String> loopMethods = new HashSet<>();
 
-	private WatchService watcher;
-
 	public Config(String args) {
 		File file = new File(args);
 		init(file);
@@ -128,24 +126,31 @@ public class Config {
 
 	private void initListener(File file) {
 		try {
-			watcher = FileSystems.getDefault().newWatchService();
-			Path path = file.toPath();
+			WatchService watcher = FileSystems.getDefault().newWatchService();
+			Path path = file.getParentFile().toPath();
 			path.register(watcher, StandardWatchEventKinds.ENTRY_MODIFY);
 
-			while (true) {
-				WatchKey key = watcher.take();
-				for (WatchEvent<?> event : key.pollEvents()) {
-					WatchEvent.Kind<?> kind = event.kind();
-					if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-						init(file);
-						break;
+			new Thread(() -> {
+				while (true) {
+					try {
+						WatchKey key = watcher.take();
+						for (WatchEvent<?> event : key.pollEvents()) {
+							boolean modified = event.kind() == StandardWatchEventKinds.ENTRY_MODIFY;
+							boolean matched = file.getName().equals(event.context().toString());
+
+							if (modified && matched) {
+								init(file);
+							}
+						}
+
+						if (!key.reset()) {
+							break;
+						}
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
 				}
-
-				if (!key.reset()) {
-					break;
-				}
-			}
+			}).start();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

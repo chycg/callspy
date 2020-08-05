@@ -8,8 +8,11 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseWheelEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,7 +20,6 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiPredicate;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -34,6 +36,8 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JTree;
 import javax.swing.SwingWorker;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -52,7 +56,7 @@ public class MainFrame extends JFrame {
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 	private DefaultTreeModel model = new DefaultTreeModel(root);
 
-	private JTextField tfFilter;
+	private JTextField tfFilter = new JTextField();
 	private JButton btnFile = new JButton("New");
 
 	private JTextPane taDetail = new JTextPane();
@@ -67,6 +71,8 @@ public class MainFrame extends JFrame {
 	private Set<String> set = new HashSet<>();
 
 	private Font font = new Font("微软雅黑", Font.PLAIN, 14);
+
+	private TreeNodeRenderer renderer;
 
 	private String lastPath = "d:/";
 
@@ -214,10 +220,8 @@ public class MainFrame extends JFrame {
 	}
 
 	private void initLayout() {
-		JTreeUtil.setTreeExpandedState(tree, true);
-		TreeFilterDecorator filterDecorator = TreeFilterDecorator.decorate(tree, createUserObjectMatcher());
-		tfFilter = filterDecorator.getFilterField();
-		tree.setCellRenderer(new TreeNodeRenderer(() -> tfFilter.getText()));
+		renderer = new TreeNodeRenderer(() -> tfFilter.getText());
+		tree.setCellRenderer(renderer);
 		tree.putClientProperty("JTree.lineStyle", "Horizontal");
 		tree.setRowHeight(24);
 
@@ -242,32 +246,39 @@ public class MainFrame extends JFrame {
 		this.add(panel);
 
 		parseFile();
-		// for (int i = 0; i < tree.getRowCount(); i++) {
-		// tree.expandRow(i);
-		// }
-
-		// tree.setRootVisible(false);
-	}
-
-	private BiPredicate<Object, String> createUserObjectMatcher() {
-		return (userObject, textToFilter) -> {
-			if (userObject instanceof Node) {
-				Node project = (Node) userObject;
-				return project.getLine().toLowerCase().contains(textToFilter);
-			}
-
-			return userObject.toString().toLowerCase().contains(textToFilter);
-		};
 	}
 
 	private void initListener() {
-		// taExclude.addMouseListener(new MouseAdapter() {
-		// @Override
-		// public void mouseClicked(MouseEvent e) {
-		// if (e.getClickCount() > 1)
-		// taExclude.selectAll();
-		// }
-		// });
+		tfFilter.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				tree.repaint();
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				tree.repaint();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				tree.repaint();
+			}
+		});
+
+		tfFilter.addKeyListener(new KeyAdapter() {
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				int code = e.getKeyCode();
+				if (code == KeyEvent.VK_UP || code == KeyEvent.VK_PAGE_UP) {
+					JTreeUtil.selectNext(tree, tfFilter.getText(), false);
+				} else if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_PAGE_DOWN || code == KeyEvent.VK_ENTER) {
+					JTreeUtil.selectNext(tree, tfFilter.getText(), true);
+				}
+			}
+		});
 
 		btnFile.addActionListener(e -> {
 			JFileChooser dialog = new JFileChooser(lastPath);
@@ -318,6 +329,21 @@ public class MainFrame extends JFrame {
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_DELETE) {
 					removeMethodAction.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "deleteMethod"));
+				} else if (e.getKeyCode() == KeyEvent.VK_0 && e.getModifiers() == InputEvent.CTRL_MASK) {
+					renderer.resetFontSize();
+				}
+
+				tree.repaint();
+			}
+		});
+
+		tree.addMouseWheelListener(new MouseAdapter() {
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if (e.getModifiers() == InputEvent.CTRL_MASK) {
+					int rotation = e.getWheelRotation();
+					renderer.updateFontSize(rotation);
 				}
 			}
 		});

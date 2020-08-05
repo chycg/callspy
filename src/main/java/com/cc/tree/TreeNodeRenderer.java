@@ -20,7 +20,9 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 	private static final String HighLightTemplate = "<span style='background:rgb(230,230,0);'>$1</span>";
 
-	private static Font font = new Font("微软雅黑", Font.PLAIN, 14);
+	private static int fontSize = 14;
+
+	private static Font font = new Font("微软雅黑", Font.PLAIN, fontSize);
 
 	private final Pattern p = Pattern.compile("\".*?\"|[a-zA-Z_]+[a-zA-Z0-9_]*");
 
@@ -33,6 +35,14 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 	public TreeNodeRenderer(Supplier<String> filterTextSupplier) {
 		this.filterTextSupplier = filterTextSupplier;
+	}
+
+	public void updateFontSize(int rotation) {
+		fontSize -= rotation;
+	}
+
+	public void resetFontSize() {
+		fontSize = 14;
 	}
 
 	@Override
@@ -58,7 +68,7 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 				String text = "<span style='color:rgb(0,30,80)'>" + renderFilterMatch(node, line) + "</span>";
 				this.setText("<html>" + text + "</html>");
-				this.setFont(font);
+				this.setFont(font.deriveFont(font.getStyle(), fontSize));
 			}
 		}
 
@@ -78,14 +88,13 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 		if (textToFilter.trim().isEmpty())
 			return text;
 
-		String text1 = text;
 		try {
-			text1 = text1.replaceAll("(?i)(" + Pattern.quote(textToFilter) + ")", HighLightTemplate);
+			text = text.replaceAll("(?i)(" + Pattern.quote(textToFilter) + ")", HighLightTemplate);
 		} catch (Exception e) {
-			return text1;
+			return text;
 		}
 
-		return text1;
+		return text;
 	}
 
 	private String updateColor(String text) {

@@ -40,6 +40,8 @@ public class Config {
 	 */
 	private boolean showParamType;
 
+	private boolean showJson;
+
 	/**
 	 * 相同方法出现次数
 	 */
@@ -117,6 +119,9 @@ public class Config {
 
 		value = properties.getProperty("showParamType");
 		showParamType = Boolean.valueOf(value);
+
+		value = properties.getProperty("showJson");
+		showJson = Boolean.valueOf(value);
 
 		imports = Utils.splitString(properties.getProperty("imports"));
 
@@ -234,6 +239,10 @@ public class Config {
 
 	public boolean isShowParamType() {
 		return showParamType;
+	}
+
+	public boolean isShowJson() {
+		return showJson;
 	}
 
 	public int getMaxCount() {

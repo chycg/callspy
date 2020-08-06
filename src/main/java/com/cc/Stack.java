@@ -16,26 +16,13 @@ public class Stack {
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
 	public static void init(Config config) {
-		init(config.isConsoleLog(), config.getIndent(), config.getPath(), config.isShowParamType(), config.getMaxDepth());
-	}
-
-	/**
-	 * 
-	 * @param consoleLog
-	 *            是否输出console log
-	 * @param indent
-	 *            占位符
-	 * @param filePath
-	 *            保存路径
-	 * @param showParamType
-	 *            入参是否显示类型而非toString
-	 */
-	public static void init(boolean consoleLog, String indent, String filePath, boolean showParamType, int maxDepth) {
-		Stack.consoleLog = consoleLog;
+		String indent = config.getIndent();
+		Stack.consoleLog = config.isConsoleLog();
 		Stack.indent = indent == null ? "~" : indent;
-		Stack.filePath = filePath;
-		Utils.showParamType = showParamType;
-		Stack.maxDepth = maxDepth;
+		Stack.filePath = config.getPath();
+		Stack.maxDepth = config.getMaxDepth();
+		Utils.showParamType = config.isShowParamType();
+		Utils.showJson = config.isShowJson();
 	}
 
 	public static void push() {
@@ -78,11 +65,11 @@ public class Stack {
 	}
 
 	public static void log(String method, Object[] args) {
-		log(method + "(" + Utils.toString(args) + ")");
+		log(method + "(" + Utils.getArgs(args) + ")");
 	}
 
 	public static void log(String method, Object[] args, Object returnValue) {
-		log(method + "(" + Utils.toString(args) + ") -> " + Utils.toString(returnValue));
+		log(method + "(" + Utils.getArgs(args) + ") -> " + Utils.toString(returnValue));
 	}
 
 	/**

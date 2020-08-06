@@ -5,45 +5,68 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.json.JSONObject;
+
 public class Utils {
 
 	/**
 	 * 是否显示入参/返参类型而非取值
 	 */
-	static boolean showParamType;
+	static boolean showParamType = false;
 
-	public static String toString(String[] args) {
-		return toString((Object[]) args);
-	}
+	static boolean showJson = false;
 
-	public static String toString(Object[] args) {
+	/**
+	 * trace args
+	 * 
+	 * @param args
+	 * @return
+	 */
+	public static String getArgs(Object[] args) {
 		if (args == null || args.length == 0)
 			return "";
 
+		return toArrayString(args);
+	}
+
+	public static String toArrayString(Object[] args) {
+		if (args == null)
+			return null;
+
+		if (args.length == 0)
+			return args.getClass().getComponentType().getName() + "[]";
+
 		StringBuilder sb = new StringBuilder();
-		if (args != null && args.length > 0) {
-			for (Object arg : args) {
-				String text;
-				String prefix = "";
-				if (arg == null) {
-					text = null;
-				} else {
-					prefix = arg instanceof String ? "\"" : "";
-					text = toString(arg);
-				}
-
-				if (arg != null && arg.getClass().isArray()) {
-					Class<?> elementType = arg.getClass().getComponentType();
-					text = elementType.getName() + "[]";
-				}
-
-				sb.append(prefix).append(text).append(prefix).append(",");
-			}
-
-			sb.deleteCharAt(sb.length() - 1);
+		for (Object arg : args) {
+			String text = toString(arg);
+			String prefix = arg instanceof String ? "\"" : "";
+			sb.append(prefix).append(text).append(prefix).append(",");
 		}
 
+		sb.deleteCharAt(sb.length() - 1);
 		return sb.toString();
+	}
+
+	public static String toString(Object arg) {
+		if (arg == null)
+			return null;
+
+		Class<?> clz = arg.getClass();
+		if (clz.isArray())
+			return toArrayString((Object[]) arg);
+
+		if (clz.getName().startsWith("java"))
+			return arg.toString();
+
+		if (showJson) {
+			String text = clz.getSimpleName() + "=" + JSONObject.valueToString(arg);
+			if (text.length() > 64)
+				text = "<" + clz.getSimpleName() + ">";
+
+			return text;
+		}
+
+		return arg.toString();
 	}
 
 	public static String[] getArgTypes(Object[] args) {
@@ -133,30 +156,10 @@ public class Utils {
 		return !isEmpty(c);
 	}
 
-	public static String toString(Object v) {
-		if (v == null)
-			return null;
-
-		if (v.getClass().getName().startsWith("java"))
-			return v.toString();
-
-		return showParamType ? "<" + v.getClass().getSimpleName() + ">" : v.toString();
-	}
-
 	public static boolean isContain(Object o, Object... values) {
 		if (o == null || isEmpty(values))
 			return false;
 
-		try {
-			return Stream.of(values).anyMatch(e -> o.equals(e));
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(o + ", values.size = " + values.length + ", v0 = " + values[0]);
-		} catch (Error ex) {
-			ex.printStackTrace();
-			System.out.println(o + ", values.size = " + values.length + ", v0 = " + values[0]);
-		}
-
-		return false;
+		return Stream.of(values).anyMatch(e -> o.equals(e));
 	}
 }

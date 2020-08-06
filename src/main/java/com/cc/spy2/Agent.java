@@ -1,5 +1,6 @@
 package com.cc.spy2;
 
+import static net.bytebuddy.matcher.ElementMatchers.isEquals;
 import static net.bytebuddy.matcher.ElementMatchers.isHashCode;
 import static net.bytebuddy.matcher.ElementMatchers.isInterface;
 import static net.bytebuddy.matcher.ElementMatchers.isSetter;
@@ -50,7 +51,7 @@ public class Agent {
 		};
 
 		Junction<?> judge = new DefaultJunction<NamedElement>();
-		judge = judge.and(not(isInterface())).and(not(isSetter())).and(not(isToString())).and(not(isHashCode()));
+		judge = judge.and(not(isInterface())).and(not(isSetter())).and(not(isToString())).and(not(isHashCode())).and(not(isEquals()));
 
 		for (String e : config.getIncludes()) {
 			judge = judge.and(ElementMatchers.nameStartsWith(e));

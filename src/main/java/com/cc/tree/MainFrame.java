@@ -210,7 +210,9 @@ public class MainFrame extends JFrame {
 
 		tfFilter.setFont(font);
 		tfSelection.setFont(font);
-		taDetail.setFont(font);
+
+		taDetail.setContentType("text/html");
+		taDetail.setEditable(false);
 
 		setTitle("trace");
 		setSize(800, 600);
@@ -233,7 +235,6 @@ public class MainFrame extends JFrame {
 		topBar.add(btnFile, BorderLayout.EAST);
 
 		panel.add(topBar, BorderLayout.NORTH);
-		taDetail.setEditable(false);
 
 		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), new JScrollPane(taDetail));
 		rootSplit.setDividerLocation(1500);
@@ -321,7 +322,9 @@ public class MainFrame extends JFrame {
 
 			Node data = (Node) node.getUserObject();
 			tfSelection.setText(data.getCallName());
-			taDetail.setText(data.getLine());
+
+			String tagLine = renderer.getTagLine(data);
+			taDetail.setText("<font size='5' face='Arial'>" + tagLine + "</font>");
 		});
 
 		tree.addKeyListener(new KeyAdapter() {
@@ -380,7 +383,7 @@ public class MainFrame extends JFrame {
 
 				try {
 					List<String> list = Files.readAllLines(Paths.get(file.toURI()));
-					setTitle("Trace-" + list.get(0));
+					setTitle(file.getName() + " - " + list.get(0));
 
 					String line = "";
 					for (int i = 2; i < list.size(); i++) {

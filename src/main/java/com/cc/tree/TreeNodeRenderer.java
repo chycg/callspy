@@ -22,7 +22,7 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 	private static int fontSize = 14;
 
-	private static Font font = new Font("微软雅黑", Font.PLAIN, fontSize);
+	static Font font = new Font("微软雅黑", Font.PLAIN, fontSize);
 
 	private final Pattern p = Pattern.compile("\".*?\"|[a-zA-Z_]+[a-zA-Z0-9_]*");
 
@@ -57,22 +57,33 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 			String line = data.getLine();
 			int index = line.indexOf(method);
 			if (index >= 0) {
-				int dotIndex = line.indexOf('.');
-				int slashIndex = line.lastIndexOf('/', dotIndex);
-				String prefix = line.substring(0, slashIndex + 1).replace('/', '.');
-
-				method = line.substring(slashIndex + 1, dotIndex + 1) + data.getMethodName();
-				String suffix = line.substring(line.indexOf('(', dotIndex));
-
-				line = prefix + "<b>" + method + "</b>" + updateColor(suffix);
-
+				line = getTagLine(data);
 				String text = "<span style='color:rgb(0,30,80)'>" + renderFilterMatch(node, line) + "</span>";
+
 				this.setText("<html>" + text + "</html>");
 				this.setFont(font.deriveFont(font.getStyle(), fontSize));
 			}
 		}
 
 		return this;
+	}
+
+	String getTagLine(Node data) {
+		String method = data.getMethod();
+		String line = data.getLine();
+
+		int index = line.indexOf(method);
+		if (index >= 0) {
+			int dotIndex = line.indexOf('.');
+			int slashIndex = line.lastIndexOf('/', dotIndex);
+			String prefix = line.substring(0, slashIndex + 1).replace('/', '.');
+
+			method = line.substring(slashIndex + 1, dotIndex + 1) + data.getMethodName();
+			String suffix = line.substring(line.indexOf('(', dotIndex));
+			line = prefix + "<b>" + method + "</b>" + updateColor(suffix);
+		}
+
+		return line;
 	}
 
 	@Override

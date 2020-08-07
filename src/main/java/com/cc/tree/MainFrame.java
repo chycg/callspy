@@ -38,6 +38,8 @@ import javax.swing.JTree;
 import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -102,6 +104,18 @@ public class MainFrame extends JFrame {
 					text = tfSelection.getSelectedText();
 				} else {
 					text = tfSelection.getText();
+				}
+			} else if (c == taDetail) {
+				if (taDetail.getSelectedText() != null && taDetail.getSelectedText().length() > 0) {
+					text = taDetail.getSelectedText();
+				} else {
+					Document document = taDetail.getDocument();
+					try {
+						text = document.getText(0, document.getLength());
+						text = text.substring(0, text.indexOf('('));
+					} catch (BadLocationException e1) {
+						e1.printStackTrace();
+					}
 				}
 			}
 
@@ -355,6 +369,7 @@ public class MainFrame extends JFrame {
 		JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.add(new JMenuItem(copyAction));
 		tfSelection.setComponentPopupMenu(popupMenu);
+		taDetail.setComponentPopupMenu(popupMenu);
 	}
 
 	private void removeTreeNode(DefaultMutableTreeNode node, String text) {

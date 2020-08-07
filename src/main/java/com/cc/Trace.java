@@ -59,6 +59,8 @@ public class Trace {
 			return;
 
 		initIndent = initIndent.substring(indent.length());
+		if (initIndent.isEmpty())
+			initIndent = indent;
 	}
 
 	public void log(String str) {

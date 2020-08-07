@@ -17,6 +17,11 @@ public class Utils {
 	static boolean showJson = false;
 
 	/**
+	 * 简单类名
+	 */
+	static boolean showSimpleClzName = false;
+
+	/**
 	 * trace args
 	 * 
 	 * @param args
@@ -62,17 +67,29 @@ public class Utils {
 			return toArrayString((Object[]) arg);
 
 		if (clz.getName().startsWith("java"))
-			return arg.toString();
+			return getString(arg);
 
 		if (showJson) {
 			String text = clz.getSimpleName() + "=" + JSONObject.valueToString(arg);
 			if (text.length() > 64)
-				text = "<" + clz.getSimpleName() + ">";
+				text = makeSimpleName(arg);
 
 			return text;
 		}
 
-		return arg.toString();
+		return getString(arg);
+	}
+
+	private static String getString(Object arg) {
+		String str = arg.toString();
+		if (!showSimpleClzName || !str.contains("@"))
+			return str;
+
+		return makeSimpleName(arg);
+	}
+
+	private static String makeSimpleName(Object arg) {
+		return "【" + arg.getClass().getSimpleName() + "】";
 	}
 
 	public static String[] getArgTypes(Object[] args) {
@@ -88,7 +105,7 @@ public class Utils {
 					text = null;
 				} else {
 					prefix = arg instanceof String ? "\"" : "";
-					text = "<" + arg.getClass().getSimpleName() + ">";
+					text = makeSimpleName(arg);
 				}
 
 				if (arg != null && arg.getClass().isArray()) {

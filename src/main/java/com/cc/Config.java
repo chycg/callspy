@@ -33,6 +33,11 @@ public class Config {
 	private boolean showMethodInfo;
 
 	/**
+	 * 简短类名
+	 */
+	private boolean showSimpleClzName;
+
+	/**
 	 * 显示入参类型而非toString
 	 */
 	private boolean showParamType;
@@ -111,6 +116,9 @@ public class Config {
 
 		value = properties.getProperty("showMethodInfo");
 		showMethodInfo = Boolean.valueOf(value);
+
+		value = properties.getProperty("showSimpleClzName");
+		showSimpleClzName = Boolean.valueOf(value);
 
 		value = properties.getProperty("showParamType");
 		showParamType = Boolean.valueOf(value);
@@ -211,6 +219,10 @@ public class Config {
 
 	public boolean isShowMethodInfo() {
 		return showMethodInfo;
+	}
+
+	public boolean isShowSimpleClzName() {
+		return showSimpleClzName;
 	}
 
 	public boolean isShowParamType() {

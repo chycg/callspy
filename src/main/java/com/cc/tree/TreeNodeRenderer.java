@@ -91,8 +91,8 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 		if (node.isRoot())
 			return text;
 
-		String textToFilter = filterTextSupplier.get();
-		if (textToFilter.trim().isEmpty())
+		String textToFilter = filterTextSupplier.get().trim();
+		if (textToFilter.isEmpty())
 			return text;
 
 		try {

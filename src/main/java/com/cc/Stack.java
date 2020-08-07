@@ -21,6 +21,7 @@ public class Stack {
 		Stack.maxDepth = config.getMaxDepth();
 		Utils.showParamType = config.isShowParamType();
 		Utils.showJson = config.isShowJson();
+		Utils.showSimpleClzName = config.isShowSimpleClzName();
 	}
 
 	public static boolean push(String method) {

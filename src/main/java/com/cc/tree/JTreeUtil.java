@@ -27,7 +27,8 @@ public class JTreeUtil {
 	private static boolean isMatched(DefaultMutableTreeNode treeNode, String text) {
 		if (treeNode.getUserObject() instanceof Node) {
 			Node node = (Node) treeNode.getUserObject();
-			return node.getLine().toLowerCase().contains(text.toLowerCase());
+			String line = node.getLine().toLowerCase();
+			return line.contains(text.toLowerCase());
 		}
 
 		return false;
@@ -57,6 +58,7 @@ public class JTreeUtil {
 		TreePath path = new TreePath(matchedNode.get(index).getPath());
 		tree.scrollPathToVisible(path);
 		tree.expandPath(path);
+		tree.clearSelection();
 		tree.setSelectionPath(path);
 	}
 }

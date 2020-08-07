@@ -16,20 +16,29 @@ public class Trace {
 
 	private String initIndent = "";
 
+	private String method;
+
 	private BufferedWriter bw;
 
-	public Trace(boolean consoleLog, String indent, long threadId, String filePath) {
+	public Trace(String method, boolean consoleLog, String indent, long threadId, String filePath) {
+		this.method = method;
 		this.threadId = threadId;
 		this.indent = indent;
 		this.consoleLog = consoleLog;
 
-		File dir = new File("./" + DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now()));
+		String path = "./";
+		if (filePath.contains("/") || filePath.contains("\\")) {
+			File f = new File(filePath);
+			path = f.getParent() == null ? f.getPath() : f.getParent();
+		}
+
+		File dir = new File(path, DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now()));
 		dir.mkdirs();
 
 		for (File file : dir.listFiles())
 			file.delete();
 
-		File file = new File(dir, filePath + "." + threadId);
+		File file = new File(dir, "trace.log." + threadId);
 		try {
 			bw = new BufferedWriter(new FileWriter(file));
 			if (file.exists()) {
@@ -68,6 +77,10 @@ public class Trace {
 
 	public int getDepth() {
 		return initIndent.length();
+	}
+
+	public String getMethod() {
+		return method;
 	}
 
 	@Override

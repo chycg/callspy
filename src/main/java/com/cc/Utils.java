@@ -51,7 +51,13 @@ public class Utils {
 		if (arg == null)
 			return null;
 
+		if (arg instanceof Class)
+			return ((Class<?>) arg).getCanonicalName();
+
 		Class<?> clz = arg.getClass();
+		if (clz.getSimpleName().contains("$Proxy")) // proxy type
+			return "$Proxy";
+
 		if (clz.isArray())
 			return toArrayString((Object[]) arg);
 

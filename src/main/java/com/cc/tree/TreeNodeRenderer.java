@@ -53,17 +53,13 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 		if (userObject instanceof Node) {
 			Node data = (Node) userObject;
 
-			String method = data.getMethod();
-			String line = data.getLine();
-			int index = line.indexOf(method);
-			if (index >= 0) {
-				line = getTagLine(data);
-				String text = "<span style='color:rgb(0,30,80)'>" + renderFilterMatch(node, line) + "</span>";
-
-				this.setText("<html>" + text + "</html>");
-				this.setFont(font.deriveFont(font.getStyle(), fontSize));
+			if (data.getLine().contains(data.getMethod())) {
+				String tagLine = getTagLine(data);
+				setText("<html><span style='color:rgb(0,30,80)'>" + renderFilterMatch(node, tagLine) + "</span></html>");
 			}
 		}
+
+		this.setFont(font.deriveFont(font.getStyle(), fontSize));
 
 		return this;
 	}

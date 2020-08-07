@@ -105,7 +105,7 @@ public class Config {
 		value = properties.getProperty("showGetter");
 		showGetter = Boolean.valueOf(value);
 
-		value = properties.getProperty("maxCount", "50");
+		value = properties.getProperty("maxCount", "5");
 		maxCount = Integer.parseInt(value);
 
 		value = properties.getProperty("maxDepth", "50");
@@ -126,7 +126,7 @@ public class Config {
 		imports = Utils.splitString(properties.getProperty("imports"));
 
 		indent = properties.getProperty("indent");
-		path = properties.getProperty("filePath", "user.log");
+		path = properties.getProperty("filePath", "./");
 	}
 
 	private void initListener(File file) {
@@ -188,7 +188,7 @@ public class Config {
 
 		String key = Name + "." + methodName;
 		countMap.putIfAbsent(key, new AtomicInteger());
-		int count = countMap.get(key).get();
+		int count = countMap.get(key).incrementAndGet();
 		if (count > maxCount) {
 			System.out.println(key + ": count=" + count);
 			return false;

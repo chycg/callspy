@@ -11,7 +11,7 @@ public class Stack {
 
 	private static String filePath;
 
-	private static int maxDepth = 50;
+	private static int maxDepth = 5;
 
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
@@ -25,15 +25,20 @@ public class Stack {
 		Utils.showJson = config.isShowJson();
 	}
 
-	public static void push() {
+	public static boolean push(String method) {
 		long threadId = Thread.currentThread().getId();
 		Trace trace = map.get(threadId);
+
+		if (trace != null && trace.getMethod().equals(method))
+			return false;
+
 		if (trace == null) {
-			trace = new Trace(consoleLog, indent, threadId, filePath);
+			trace = new Trace(method, consoleLog, indent, threadId, filePath);
 			map.put(threadId, trace);
 		}
 
 		trace.push();
+		return true;
 	}
 
 	/**
@@ -60,8 +65,9 @@ public class Stack {
 	}
 
 	public static void push(String method, Object[] args) {
-		push();
-		log(method, args);
+		boolean needLog = push(method);
+		if (needLog)
+			log(method, args);
 	}
 
 	public static void log(String method, Object[] args) {

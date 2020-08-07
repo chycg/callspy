@@ -15,6 +15,7 @@ public class TraceInterceptor {
 
 	public static Config config;
 
+
 	@RuntimeType
 	public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable, @AllArguments Object[] arguments) throws Exception {
 		Class<?> clz = method.getDeclaringClass();
@@ -27,7 +28,7 @@ public class TraceInterceptor {
 			if (config.isShowEntry()) {
 				Stack.push(currentMethod, args);
 			} else {
-				Stack.push();
+				Stack.push(currentMethod);
 			}
 		}
 

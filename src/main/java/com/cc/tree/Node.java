@@ -24,7 +24,6 @@ public class Node implements Serializable {
 		return method;
 	}
 
-
 	public String getMethodName() {
 		return method.substring(method.indexOf(".") + 1);
 	}
@@ -32,7 +31,6 @@ public class Node implements Serializable {
 	public String getCallName() {
 		return method.replaceAll("/", ".");
 	}
-
 
 	public void setResultLine(String line) {
 		line = line.trim();

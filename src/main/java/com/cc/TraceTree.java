@@ -13,7 +13,7 @@ public class TraceTree {
 
 	public static void main(String[] args) {
 		String path = getClipboardPath();
-		if (Utils.isNotEmpty(args)) {
+		if (path == null && Utils.isNotEmpty(args)) {
 			path = args[0];
 		}
 

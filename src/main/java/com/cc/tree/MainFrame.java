@@ -337,7 +337,7 @@ public class MainFrame extends JFrame {
 			tfSelection.setText(data.getCallName());
 
 			String tagLine = renderer.getTagLine(data);
-			taDetail.setText("<font size='5' face='Arial'>" + tagLine + "</font>");
+			taDetail.setText("<font size='5' face='Courier New'>" + tagLine + "</font>");
 		});
 
 		tree.addKeyListener(new KeyAdapter() {
@@ -453,7 +453,13 @@ public class MainFrame extends JFrame {
 
 		if (count < lastCount) {
 			parentNode = (DefaultMutableTreeNode) parentNode.getParent();
-			lastCount = ((Node) parentNode.getUserObject()).getCount();
+
+			if (parentNode.getUserObject() instanceof Node) {
+				Node parent = (Node) parentNode.getUserObject();
+				lastCount = parent.getCount();
+			} else {
+				lastCount = 0;
+			}
 		}
 
 		if (count > lastCount) {

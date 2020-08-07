@@ -7,7 +7,7 @@ public class Stack {
 
 	private static boolean consoleLog;
 
-	private static String indent = "~";
+	private static final String indent = "~";
 
 	private static String filePath;
 
@@ -16,9 +16,7 @@ public class Stack {
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
 	public static void init(Config config) {
-		String indent = config.getIndent();
 		Stack.consoleLog = config.isConsoleLog();
-		Stack.indent = indent == null ? "~" : indent;
 		Stack.filePath = config.getPath();
 		Stack.maxDepth = config.getMaxDepth();
 		Utils.showParamType = config.isShowParamType();

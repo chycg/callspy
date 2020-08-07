@@ -22,9 +22,6 @@ public class Config {
 	private Set<String> includes;
 	private Set<String> excludes;
 
-	private Set<String> excludeClass;
-	private Set<String> excludeMethod;
-
 	private boolean showEntry;
 	private boolean showGetter;
 
@@ -53,8 +50,6 @@ public class Config {
 	private int maxDepth;
 
 	private boolean consoleLog;
-
-	private String indent;
 
 	private String path;
 
@@ -96,8 +91,8 @@ public class Config {
 			}
 		}
 
-		excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
-		excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
+		// excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
+		// excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
 
 		String value = properties.getProperty("showEntry"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
@@ -125,7 +120,6 @@ public class Config {
 
 		imports = Utils.splitString(properties.getProperty("imports"));
 
-		indent = properties.getProperty("indent");
 		path = properties.getProperty("filePath", "./");
 	}
 
@@ -163,42 +157,32 @@ public class Config {
 
 	public boolean needTrace(Method method) {
 		String methodName = method.getName();
-
 		if (isBasicMethod(methodName) || loopMethods.contains(methodName))
 			return false;
 
 		if (!showGetter && method.getParameterTypes().length == 0 && (methodName.startsWith("get") || methodName.startsWith("is")))
 			return false;
 
-		String name = method.getDeclaringClass().getName();
-		if (getExcludes().stream().anyMatch(e -> name.startsWith(e)))
+		String className = method.getDeclaringClass().getName();
+		String simpleName = method.getDeclaringClass().getSimpleName();
+
+		// packageName, className, methodName
+		if (excludes.stream().anyMatch(e -> className.startsWith(e) || simpleName != null && e.endsWith(simpleName) || methodName.equals(e)))
 			return false;
 
-		int index = name.lastIndexOf('.');
-		String Name = null;
-		if (index > 0) {
-			Name = name.substring(index + 1, name.length());
-		}
-
-		if (getExcludeClass().contains(Name))
-			return false;
-
-		if (excludeMethod.contains(methodName) || excludeMethod.contains(Name + "." + methodName))
-			return false;
-
-		String key = Name + "." + methodName;
+		String key = simpleName + "." + methodName;
 		countMap.putIfAbsent(key, new AtomicInteger());
 		int count = countMap.get(key).incrementAndGet();
 		if (count > maxCount) {
-			System.out.println(key + ": count=" + count);
+			// System.out.println(key + ": count=" + count);
 			return false;
 		}
 
-		return includes.stream().anyMatch(e -> name.startsWith(e));
+		return includes.stream().anyMatch(e -> className.startsWith(e));
 	}
 
 	private boolean isBasicMethod(String methodName) {
-		return Utils.isContain(methodName, "toString", "hashCode", "equals", "wait", "clone");
+		return Utils.isContain(methodName, "toString", "hashCode", "equals", "wait", "clone", "compareTo");
 	}
 
 	public void addLoopMethod(String methodName) {
@@ -211,14 +195,6 @@ public class Config {
 
 	public Set<String> getExcludes() {
 		return excludes;
-	}
-
-	public Set<String> getExcludeClass() {
-		return excludeClass;
-	}
-
-	public Set<String> getExcludeMethod() {
-		return excludeMethod;
 	}
 
 	public boolean isShowEntry() {
@@ -255,10 +231,6 @@ public class Config {
 
 	public boolean isConsoleLog() {
 		return consoleLog;
-	}
-
-	public String getIndent() {
-		return indent;
 	}
 
 	public String getPath() {

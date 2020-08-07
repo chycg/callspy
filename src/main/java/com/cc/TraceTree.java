@@ -12,11 +12,9 @@ import com.cc.tree.MainFrame;
 public class TraceTree {
 
 	public static void main(String[] args) {
-		String path = null;
+		String path = getClipboardPath();
 		if (Utils.isNotEmpty(args)) {
 			path = args[0];
-		} else {
-			path = getClipboardPath();
 		}
 
 		try {

@@ -51,7 +51,7 @@ public class MainFrame extends JFrame {
 	private static final long serialVersionUID = -1266662931999876034L;
 
 	private String path = "";
-	private final char spaceChar = '~';
+	private final String spaceChar = "~";
 
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 	private DefaultTreeModel model = new DefaultTreeModel(root);
@@ -214,7 +214,6 @@ public class MainFrame extends JFrame {
 		taDetail.setContentType("text/html");
 		taDetail.setEditable(false);
 
-		setTitle("trace");
 		setSize(800, 600);
 		setVisible(true);
 
@@ -347,6 +346,8 @@ public class MainFrame extends JFrame {
 				if (e.getModifiers() == InputEvent.CTRL_MASK) {
 					int rotation = e.getWheelRotation();
 					renderer.updateFontSize(rotation);
+				} else {
+					tree.getParent().dispatchEvent(e);
 				}
 			}
 		});
@@ -386,9 +387,10 @@ public class MainFrame extends JFrame {
 					setTitle(file.getName() + " - " + list.get(0));
 
 					String line = "";
+					int lineCount = 0;
 					for (int i = 2; i < list.size(); i++) {
 						String e = list.get(i);
-						if (!e.startsWith("~"))
+						if (!e.startsWith(spaceChar))
 							continue;
 
 						line += e;
@@ -396,7 +398,7 @@ public class MainFrame extends JFrame {
 						int k = i + 1;
 						while (k < list.size()) {
 							String nextLine = list.get(k);
-							if (nextLine.startsWith("~"))
+							if (nextLine.startsWith(spaceChar))
 								break;
 
 							line += nextLine;
@@ -404,8 +406,10 @@ public class MainFrame extends JFrame {
 						}
 
 						addNode(line);
+						lineCount++;
 						line = "";
 					}
+					setTitle(getTitle() + " - rows: " + lineCount);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -455,11 +459,12 @@ public class MainFrame extends JFrame {
 	}
 
 	private int countSpace(String line) {
-		if (!line.startsWith(String.valueOf(spaceChar)))
+		if (!line.startsWith(spaceChar))
 			return -1;
 
+		char char0 = spaceChar.charAt(0);
 		for (int i = 0; i < line.length(); i++) {
-			if (line.charAt(i) == spaceChar)
+			if (line.charAt(i) == char0)
 				continue;
 
 			return i;

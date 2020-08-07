@@ -61,10 +61,6 @@ public class Agent {
 			judge = judge.and(not(nameContainsIgnoreCase(e)));
 		}
 
-		for (String e : config.getExcludeMethod()) {
-			judge = judge.and(not(ElementMatchers.nameEndsWith(e)));
-		}
-
 		new AgentBuilder.Default().type(new DefaultMatcher(judge)).transform(transformer).installOn(instrumentation);
 	}
 

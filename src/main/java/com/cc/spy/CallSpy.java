@@ -46,7 +46,7 @@ public class CallSpy implements ClassFileTransformer {
 				Name = name.substring(index + 1, name.length());
 			}
 
-			if (name.startsWith(e) || Name != null && (e.endsWith(Name) || e.contains(Name + "$") || config.getExcludeClass().contains(Name)))
+			if (name.startsWith(e) || Name != null && (e.endsWith(Name) || e.contains(Name + "$")))
 				return bytes;
 		}
 
@@ -67,8 +67,8 @@ public class CallSpy implements ClassFileTransformer {
 							continue;
 
 						String methodName = method.getName();
-						if (config.getExcludeMethod().contains(methodName)
-								|| config.getExcludeMethod().contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
+						if (config.getExcludes().contains(methodName)
+								|| config.getExcludes().contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
 							continue;
 
 						if (!config.isShowGetter() && method.getParameterTypes().length == 0

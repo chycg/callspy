@@ -28,8 +28,8 @@ public class Stack {
 		long threadId = Thread.currentThread().getId();
 		Trace trace = map.get(threadId);
 
-		if (trace != null && trace.getMethod().equals(method))
-			return false;
+		// if (trace != null && trace.getMethod().equals(method)) // reused method?
+		// return false;
 
 		if (trace == null) {
 			trace = new Trace(method, consoleLog, indent, threadId, filePath);

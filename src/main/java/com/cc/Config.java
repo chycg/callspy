@@ -96,16 +96,13 @@ public class Config {
 			}
 		}
 
-		// excludeClass = Utils.splitString(properties.getProperty("excludeClass"));
-		// excludeMethod = Utils.splitString(properties.getProperty("excludeMethod"));
-
 		String value = properties.getProperty("showEntry"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
 
 		value = properties.getProperty("showGetter");
 		showGetter = Boolean.valueOf(value);
 
-		value = properties.getProperty("maxCount", "5");
+		value = properties.getProperty("maxCount", "10");
 		maxCount = Integer.parseInt(value);
 
 		value = properties.getProperty("maxDepth", "50");

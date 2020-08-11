@@ -53,9 +53,7 @@ public class Agent {
 		Junction<?> judge = new DefaultJunction<NamedElement>();
 		judge = judge.and(not(isInterface())).and(not(isSetter())).and(not(isToString())).and(not(isHashCode())).and(not(isEquals()));
 
-		for (String e : config.getIncludes()) {
-			judge = judge.and(ElementMatchers.nameStartsWith(e));
-		}
+		judge = judge.and(ElementMatchers.nameStartsWith(config.getIncludes()));
 
 		for (String e : config.getExcludes()) {
 			judge = judge.and(not(nameContainsIgnoreCase(e)));

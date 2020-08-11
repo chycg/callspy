@@ -17,9 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -46,8 +44,6 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import com.cc.Utils;
-
 public class MainFrame extends JFrame {
 
 	private static final long serialVersionUID = -1266662931999876034L;
@@ -70,13 +66,15 @@ public class MainFrame extends JFrame {
 
 	private int lastCount = -1;
 
-	private Set<String> set = new HashSet<>();
-
 	private Font font = new Font("微软雅黑", Font.PLAIN, 14);
 
 	private TreeNodeRenderer renderer;
 
 	private String lastPath = "d:/";
+
+	private int nodeCount = 0;
+
+	private String title;
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -160,7 +158,7 @@ public class MainFrame extends JFrame {
 			if (node == null)
 				return;
 
-			model.removeNodeFromParent(node);
+			removeTreeNode(node, null);
 		}
 	};
 
@@ -181,22 +179,11 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				removeTreeNode(root, data.getMethod());
-				set.add(data.getMethod().replace('/', '.'));
-				// taExclude.setText(Utils.toString(set));
 			}
 
-			if (node.getParent() != null && node.getChildCount() == 0)
-				model.removeNodeFromParent(node);
-		}
-	};
-
-	private AbstractAction printExcludeAction = new AbstractAction("printExclude") {
-
-		private static final long serialVersionUID = -2683251181036247062L;
-
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			System.out.println(Utils.toString(set));
+			// if (node.getParent() != null && node.getChildCount() == 0) {
+			// deleteNode(node);
+			// }
 		}
 	};
 
@@ -318,7 +305,6 @@ public class MainFrame extends JFrame {
 		popup.addSeparator();
 		popup.add(new JMenuItem(copyAction));
 		popup.add(new JMenuItem(copyMethodAction));
-		popup.add(new JMenuItem(printExcludeAction));
 		popup.addSeparator();
 		popup.add(new JCheckBoxMenuItem(topWindowAction));
 
@@ -372,18 +358,35 @@ public class MainFrame extends JFrame {
 		taDetail.setComponentPopupMenu(popupMenu);
 	}
 
+	/**
+	 * 
+	 * @param node
+	 * @param text
+	 *            为空删除当前节点，否则删除同名方法节点
+	 */
 	private void removeTreeNode(DefaultMutableTreeNode node, String text) {
-		if (node.getUserObject().getClass() == Node.class) {
-			Node data = (Node) node.getUserObject();
-			if (data != null && data.getLine().contains(text) && node.getChildCount() == 0) {
-				model.removeNodeFromParent(node);
-			}
-		}
-
 		int count = node.getChildCount();
 		for (int i = count - 1; i >= 0; i--) {
 			removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), text);
 		}
+
+		if (node != root) {
+			Node data = (Node) node.getUserObject();
+			if (node.getChildCount() == 0 && (text == null || data.getLine().contains(text)))
+				deleteNode(node);
+		}
+	}
+
+	private void addNode(MutableTreeNode node, MutableTreeNode parentNode, int index) {
+		model.insertNodeInto(node, parentNode, index);
+		nodeCount++;
+	}
+
+	private void deleteNode(DefaultMutableTreeNode node) {
+		model.removeNodeFromParent(node);
+		nodeCount--;
+
+		setTitle(title + " - rows: " + nodeCount);
 	}
 
 	private void parseFile() {
@@ -399,10 +402,9 @@ public class MainFrame extends JFrame {
 
 				try {
 					List<String> list = Files.readAllLines(Paths.get(file.toURI()));
-					setTitle(file.getName() + " - " + list.get(0));
+					title = file.getName() + " - " + list.get(0);
 
 					String line = "";
-					int lineCount = 0;
 					for (int i = 2; i < list.size(); i++) {
 						String e = list.get(i);
 						if (!e.startsWith(spaceChar))
@@ -421,10 +423,9 @@ public class MainFrame extends JFrame {
 						}
 
 						addNode(line);
-						lineCount++;
 						line = "";
 					}
-					setTitle(getTitle() + " - rows: " + lineCount);
+					setTitle(title + " - rows: " + nodeCount);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -463,7 +464,7 @@ public class MainFrame extends JFrame {
 		}
 
 		if (count > lastCount) {
-			model.insertNodeInto(node, parentNode, parentNode.getChildCount());
+			addNode(node, parentNode, parentNode.getChildCount());
 			parentNode = node;
 		} else {
 			Node data = (Node) parentNode.getUserObject();
@@ -471,7 +472,7 @@ public class MainFrame extends JFrame {
 				data.setResultLine(line);
 			} else {
 				TreeNode pp = parentNode.getParent();
-				model.insertNodeInto(node, (MutableTreeNode) pp, pp.getChildCount());
+				addNode(node, (MutableTreeNode) pp, pp.getChildCount());
 				parentNode = node;
 			}
 		}

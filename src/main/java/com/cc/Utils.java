@@ -104,7 +104,6 @@ public class Utils {
 				if (arg == null) {
 					text = null;
 				} else {
-					prefix = arg instanceof String ? "\"" : "";
 					text = makeSimpleName(arg);
 				}
 

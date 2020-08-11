@@ -55,58 +55,55 @@ public class CallSpy implements ClassFileTransformer {
 			cp.importPackage(item);
 		}
 
-		for (String s : config.getIncludes()) {
-			if (className.replace('/', '.').startsWith(s)) {
-				CtClass ct = null;
-				try {
-					ct = cp.makeClass(new ByteArrayInputStream(bytes));
+		if (className.replace('/', '.').startsWith(config.getIncludes())) {
+			CtClass ct = null;
+			try {
+				ct = cp.makeClass(new ByteArrayInputStream(bytes));
 
-					CtMethod[] declaredMethods = ct.getDeclaredMethods();
-					for (CtMethod method : declaredMethods) {
-						if (Modifier.isAbstract(method.getModifiers()))
-							continue;
+				CtMethod[] declaredMethods = ct.getDeclaredMethods();
+				for (CtMethod method : declaredMethods) {
+					if (Modifier.isAbstract(method.getModifiers()))
+						continue;
 
-						String methodName = method.getName();
-						if (config.getExcludes().contains(methodName)
-								|| config.getExcludes().contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
-							continue;
+					String methodName = method.getName();
+					if (config.getExcludes().contains(methodName)
+							|| config.getExcludes().contains(method.getDeclaringClass().getSimpleName() + "." + methodName))
+						continue;
 
-						if (!config.isShowGetter() && method.getParameterTypes().length == 0
-								&& (methodName.startsWith("get") || methodName.startsWith("is")))
-							continue;
+					if (!config.isShowGetter() && method.getParameterTypes().length == 0
+							&& (methodName.startsWith("get") || methodName.startsWith("is")))
+						continue;
 
-						countMap.putIfAbsent(methodName, new AtomicInteger());
-						AtomicInteger counter = countMap.get(methodName);
-						if (counter.getAndIncrement() > config.getMaxCount()) {
-							System.out.println(methodName + ": count=" + counter.intValue());
-							continue;
-						}
-
-						currentMethod = className + "." + methodName;
-
-						String before = config.isShowEntry() ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
-
-						method.insertBefore(before);
-
-						String end = "{ Stack.log(\"" + currentMethod
-								+ "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
-
-						method.insertAfter(end, true);
+					countMap.putIfAbsent(methodName, new AtomicInteger());
+					AtomicInteger counter = countMap.get(methodName);
+					if (counter.getAndIncrement() > config.getMaxCount()) {
+						System.out.println(methodName + ": count=" + counter.intValue());
+						continue;
 					}
 
-					return ct.toBytecode();
-				} catch (CannotCompileException e) {
-					e.printStackTrace();
-					System.out.println("===== Class compile error: " + currentMethod);
-				} catch (NotFoundException e) {
-					System.out.println("===== Class not found error: " + currentMethod);
-				} catch (Throwable e) {
-					e.printStackTrace();
-					System.out.println("===== error: className = " + currentMethod);
-				} finally {
-					if (ct != null) {
-						ct.detach();
-					}
+					currentMethod = className + "." + methodName;
+
+					String before = config.isShowEntry() ? "{ Stack.push(\"" + currentMethod + "\", $args);}" : "{Stack.push();}";
+
+					method.insertBefore(before);
+
+					String end = "{ Stack.log(\"" + currentMethod + "\", $args, $type == void.class? \"void\": String.valueOf($_)); Stack.pop(); }";
+
+					method.insertAfter(end, true);
+				}
+
+				return ct.toBytecode();
+			} catch (CannotCompileException e) {
+				e.printStackTrace();
+				System.out.println("===== Class compile error: " + currentMethod);
+			} catch (NotFoundException e) {
+				System.out.println("===== Class not found error: " + currentMethod);
+			} catch (Throwable e) {
+				e.printStackTrace();
+				System.out.println("===== error: className = " + currentMethod);
+			} finally {
+				if (ct != null) {
+					ct.detach();
 				}
 			}
 		}

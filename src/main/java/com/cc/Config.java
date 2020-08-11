@@ -15,11 +15,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 public class Config {
 
-	private Set<String> includes;
+	private String includes;
 	private Set<String> excludes;
 
 	private boolean showEntry;
@@ -85,16 +84,8 @@ public class Config {
 			e.printStackTrace();
 		}
 
-		includes = Utils.splitString(properties.getProperty("include"));
+		includes = properties.getProperty("include");
 		excludes = Utils.splitString(properties.getProperty("exclude"));
-
-		Set<String> packages = excludes.stream().filter(e -> !e.contains(".")).collect(Collectors.toSet());
-		excludes.removeAll(packages);
-		for (String e : includes) {
-			for (String p : packages) {
-				excludes.add(e + "." + p);
-			}
-		}
 
 		String value = properties.getProperty("showEntry"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
@@ -172,7 +163,8 @@ public class Config {
 		String simpleName = method.getDeclaringClass().getSimpleName();
 
 		// packageName, className, methodName
-		if (excludes.stream().anyMatch(e -> className.startsWith(e) || simpleName != null && e.endsWith(simpleName) || methodName.equals(e)))
+		if (excludes.stream().anyMatch(
+				e -> className.startsWith(e) || className.contains(e) || simpleName != null && e.endsWith(simpleName) || methodName.equals(e)))
 			return false;
 
 		String key = simpleName + "." + methodName;
@@ -183,7 +175,7 @@ public class Config {
 			return false;
 		}
 
-		return includes.stream().anyMatch(e -> className.startsWith(e));
+		return className.startsWith(includes);
 	}
 
 	private boolean isBasicMethod(String methodName) {
@@ -194,7 +186,7 @@ public class Config {
 		loopMethods.add(methodName);
 	}
 
-	public Set<String> getIncludes() {
+	public String getIncludes() {
 		return includes;
 	}
 

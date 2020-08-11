@@ -158,7 +158,9 @@ public class MainFrame extends JFrame {
 			if (node == null)
 				return;
 
+			DefaultMutableTreeNode target = findTarget(node, null);
 			removeTreeNode(node, null);
+			tree.setSelectionPath(new TreePath(target.getPath()));
 		}
 	};
 
@@ -178,12 +180,33 @@ public class MainFrame extends JFrame {
 
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
+				DefaultMutableTreeNode target = findTarget(node, data.getMethod());
 				removeTreeNode(root, data.getMethod());
+				tree.setSelectionPath(new TreePath(target.getPath()));
 			}
+		}
+	};
 
-			// if (node.getParent() != null && node.getChildCount() == 0) {
-			// deleteNode(node);
-			// }
+	private AbstractAction removeClassAction = new AbstractAction("removeClass") {
+
+		private static final long serialVersionUID = -3540063801864849754L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			TreePath path = tree.getSelectionPath();
+			if (path == null)
+				return;
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			if (node == null)
+				return;
+
+			Node data = (Node) node.getUserObject();
+			if (data != null) {
+				DefaultMutableTreeNode target = findTarget(node, data.getClassName());
+				removeTreeNode(root, data.getClassName());
+				tree.setSelectionPath(new TreePath(target.getPath()));
+			}
 		}
 	};
 
@@ -302,6 +325,7 @@ public class MainFrame extends JFrame {
 		JPopupMenu popup = new JPopupMenu();
 		popup.add(new JMenuItem(removeAction));
 		popup.add(new JMenuItem(removeMethodAction));
+		popup.add(new JMenuItem(removeClassAction));
 		popup.addSeparator();
 		popup.add(new JMenuItem(copyAction));
 		popup.add(new JMenuItem(copyMethodAction));
@@ -320,7 +344,7 @@ public class MainFrame extends JFrame {
 				return;
 
 			Node data = (Node) node.getUserObject();
-			tfSelection.setText(data.getCallName());
+			tfSelection.setText(data.getMethod());
 
 			String tagLine = renderer.getTagLine(data);
 			taDetail.setText("<font size='5' face='Courier New'>" + tagLine + "</font>");
@@ -375,6 +399,23 @@ public class MainFrame extends JFrame {
 			if (node.getChildCount() == 0 && (text == null || data.getLine().contains(text)))
 				deleteNode(node);
 		}
+	}
+
+	private DefaultMutableTreeNode findTarget(DefaultMutableTreeNode node, String text) {
+		DefaultMutableTreeNode target = (DefaultMutableTreeNode) node.getParent();
+		if (text != null) {
+			DefaultMutableTreeNode next = node.getNextSibling();
+			while (next != null) {
+				Node data = (Node) next.getUserObject();
+				if (!data.getLine().contains(text)) {
+					return next;
+				}
+
+				next = next.getNextSibling();
+			}
+		}
+
+		return target;
 	}
 
 	private void addNode(MutableTreeNode node, MutableTreeNode parentNode, int index) {

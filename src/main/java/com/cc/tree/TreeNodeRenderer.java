@@ -70,13 +70,11 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 
 		int index = line.indexOf(method);
 		if (index >= 0) {
-			int dotIndex = line.indexOf('.');
-			int slashIndex = line.lastIndexOf('/', dotIndex);
-			String prefix = line.substring(0, slashIndex + 1).replace('/', '.');
-
-			method = line.substring(slashIndex + 1, dotIndex + 1) + data.getMethodName();
-			String suffix = line.substring(line.indexOf('(', dotIndex));
-			line = prefix + "<b>" + method + "</b>" + updateColor(suffix);
+			String className = data.getClassName();
+			int dotIndex = line.indexOf(className);
+			String prefix = line.substring(0, dotIndex);
+			String suffix = line.substring(dotIndex + className.length());
+			line = prefix + "<b>" + className + "</b>" + updateColor(suffix);
 		}
 
 		return line;

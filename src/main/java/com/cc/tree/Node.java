@@ -25,11 +25,13 @@ public class Node implements Serializable {
 	}
 
 	public String getMethodName() {
-		return method.substring(method.indexOf(".") + 1);
+		return method.substring(method.lastIndexOf(".") + 1);
 	}
 
-	public String getCallName() {
-		return method.replaceAll("/", ".");
+	public String getClassName() {
+		int dotIndex = method.lastIndexOf(".");
+		int dot2Index = method.lastIndexOf(".", dotIndex - 1);
+		return method.substring(dot2Index + 1, dotIndex);
 	}
 
 	public void setResultLine(String line) {

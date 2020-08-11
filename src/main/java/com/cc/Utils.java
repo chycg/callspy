@@ -1,5 +1,6 @@
 package com.cc;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -64,7 +65,7 @@ public class Utils {
 			return "$Proxy";
 
 		if (clz.isArray())
-			return toArrayString((Object[]) arg);
+			return getArrayString(arg);
 
 		if (clz.getName().startsWith("java"))
 			return getString(arg);
@@ -86,6 +87,43 @@ public class Utils {
 			return str;
 
 		return makeSimpleName(arg);
+	}
+
+	/**
+	 * 原始类型
+	 * 
+	 * @param arg
+	 * @return
+	 */
+	private static String getArrayString(Object arg) {
+		Class<?> clz = arg.getClass();
+		String type = clz.getName();
+		if (!type.startsWith("["))
+			return toArrayString((Object[]) arg);
+
+		switch (type) {
+		case "[B":
+			return Arrays.toString((byte[]) arg);
+		case "[I":
+			return Arrays.toString((int[]) arg);
+		case "[S":
+			return Arrays.toString((short[]) arg);
+		case "[C":
+			return Arrays.toString((char[]) arg);
+		case "[Z":
+			return Arrays.toString((boolean[]) arg);
+		case "[D":
+			return Arrays.toString((double[]) arg);
+		case "[J":
+			return Arrays.toString((long[]) arg);
+		case "[F":
+			return Arrays.toString((float[]) arg);
+
+		default:
+			break;
+		}
+
+		return arg.toString();
 	}
 
 	private static String makeSimpleName(Object arg) {
@@ -183,5 +221,12 @@ public class Utils {
 			return false;
 
 		return Stream.of(values).anyMatch(e -> o.equals(e));
+	}
+
+	public static void main(String[] args) {
+		Object b = new byte[] { 1, 2, 3 };
+		byte[] l2 = (byte[]) b;
+		System.out.println(Arrays.toString(l2));
+
 	}
 }

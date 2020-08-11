@@ -10,7 +10,7 @@ public class Trace {
 
 	private final long threadId;
 
-	private final String indent;
+	private final String indent = "~";
 
 	private final boolean consoleLog;
 
@@ -20,10 +20,9 @@ public class Trace {
 
 	private BufferedWriter bw;
 
-	public Trace(String method, boolean consoleLog, String indent, long threadId, String filePath) {
-		this.method = method;
+	public Trace(long threadId, String method, boolean consoleLog, String filePath) {
 		this.threadId = threadId;
-		this.indent = indent;
+		this.method = method;
 		this.consoleLog = consoleLog;
 
 		String path = "./";

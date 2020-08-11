@@ -7,8 +7,6 @@ public class Stack {
 
 	private static boolean consoleLog;
 
-	private static final String indent = "~";
-
 	private static String filePath;
 
 	private static int maxDepth = 5;
@@ -24,15 +22,12 @@ public class Stack {
 		Utils.showSimpleClzName = config.isShowSimpleClzName();
 	}
 
-	public static boolean push(String method) {
+	public static synchronized boolean push(String method) {
 		long threadId = Thread.currentThread().getId();
 		Trace trace = map.get(threadId);
 
-		// if (trace != null && trace.getMethod().equals(method)) // reused method?
-		// return false;
-
 		if (trace == null) {
-			trace = new Trace(method, consoleLog, indent, threadId, filePath);
+			trace = new Trace(threadId, method, consoleLog, filePath);
 			map.put(threadId, trace);
 		}
 
@@ -53,12 +48,12 @@ public class Stack {
 		return trace.getDepth() > maxDepth;
 	}
 
-	public static void pop() {
+	public static synchronized void pop() {
 		Trace trace = map.get(Thread.currentThread().getId());
 		trace.pop();
 	}
 
-	public static void log(String string) {
+	public static synchronized void log(String string) {
 		Trace trace = map.get(Thread.currentThread().getId());
 		trace.log(string);
 	}

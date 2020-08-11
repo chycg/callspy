@@ -210,6 +210,29 @@ public class MainFrame extends JFrame {
 		}
 	};
 
+	private AbstractAction removePackageAction = new AbstractAction("removePackage") {
+
+		private static final long serialVersionUID = -3540063801864849754L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			TreePath path = tree.getSelectionPath();
+			if (path == null)
+				return;
+
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+			if (node == null)
+				return;
+
+			Node data = (Node) node.getUserObject();
+			if (data != null) {
+				DefaultMutableTreeNode target = findTarget(node, data.getPackageName());
+				removeTreeNode(root, data.getPackageName());
+				tree.setSelectionPath(new TreePath(target.getPath()));
+			}
+		}
+	};
+
 	private AbstractAction topWindowAction = new AbstractAction("topWindow") {
 
 		private static final long serialVersionUID = 7398038743300735100L;
@@ -326,6 +349,7 @@ public class MainFrame extends JFrame {
 		popup.add(new JMenuItem(removeAction));
 		popup.add(new JMenuItem(removeMethodAction));
 		popup.add(new JMenuItem(removeClassAction));
+		popup.add(new JMenuItem(removePackageAction));
 		popup.addSeparator();
 		popup.add(new JMenuItem(copyAction));
 		popup.add(new JMenuItem(copyMethodAction));

@@ -34,6 +34,13 @@ public class Node implements Serializable {
 		return method.substring(dot2Index + 1, dotIndex);
 	}
 
+	public String getPackageName() {
+		int dotIndex = method.lastIndexOf(".");
+		int dot2Index = method.lastIndexOf(".", dotIndex - 1);
+		int dot3Index = method.lastIndexOf(".", dot2Index - 1);
+		return method.substring(dot3Index + 1, dot2Index);
+	}
+
 	public void setResultLine(String line) {
 		line = line.trim();
 		int index = line.indexOf("->");

@@ -12,18 +12,12 @@ public class Trace {
 
 	private final String indent = "~";
 
-	private final boolean consoleLog;
-
 	private String initIndent = "";
-
-	private String method;
 
 	private BufferedWriter bw;
 
-	public Trace(long threadId, String method, boolean consoleLog, String filePath) {
+	public Trace(long threadId, String filePath) {
 		this.threadId = threadId;
-		this.method = method;
-		this.consoleLog = consoleLog;
 
 		String path = "./";
 		if (filePath.contains("/") || filePath.contains("\\")) {
@@ -60,11 +54,8 @@ public class Trace {
 		initIndent = initIndent.substring(indent.length());
 	}
 
-	public void log(String str) {
+	public void write(String str) {
 		String line = initIndent + str;
-
-		if (consoleLog)
-			System.out.println(line);
 
 		try {
 			bw.append(line + "\n");
@@ -78,8 +69,8 @@ public class Trace {
 		return initIndent.length();
 	}
 
-	public String getMethod() {
-		return method;
+	public String getInitIndent() {
+		return initIndent;
 	}
 
 	@Override

@@ -23,7 +23,7 @@ public class TraceAdvisor {
 			if (config.isShowEntry()) {
 				Stack.push(currentMethod, args);
 			} else {
-				Stack.push(currentMethod);
+				Stack.push();
 			}
 		}
 	}

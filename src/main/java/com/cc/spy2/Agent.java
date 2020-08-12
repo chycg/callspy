@@ -12,6 +12,7 @@ import java.lang.instrument.Instrumentation;
 
 import com.cc.Config;
 import com.cc.Stack;
+import com.cc.Utils;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.agent.builder.AgentBuilder.Transformer;
@@ -34,6 +35,8 @@ public class Agent {
 		TraceAdvisor.config = config;
 
 		Stack.init(config);
+		Utils.init(config);
+
 		transform(config, instrumentation);
 	}
 

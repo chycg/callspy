@@ -13,14 +13,11 @@ public class Utils {
 	/**
 	 * 是否显示入参/返参类型而非取值
 	 */
-	static boolean showParamType = false;
+	private static Config config;
 
-	static boolean showJson = false;
-
-	/**
-	 * 简单类名
-	 */
-	static boolean showSimpleClzName = false;
+	public static void init(Config config) {
+		Utils.config = config;
+	}
 
 	/**
 	 * trace args
@@ -70,7 +67,7 @@ public class Utils {
 		if (clz.getName().startsWith("java"))
 			return getString(arg);
 
-		if (showJson) {
+		if (config.isShowJson()) {
 			String text = clz.getSimpleName() + "=" + JSONObject.valueToString(arg);
 			if (text.length() > 64)
 				text = makeSimpleName(arg);
@@ -83,7 +80,7 @@ public class Utils {
 
 	private static String getString(Object arg) {
 		String str = arg.toString();
-		if (!showSimpleClzName || !str.contains("@"))
+		if (!config.isShowSimpleClzName() || !str.contains("@"))
 			return str;
 
 		return makeSimpleName(arg);
@@ -98,7 +95,7 @@ public class Utils {
 	private static String getArrayString(Object arg) {
 		Class<?> clz = arg.getClass();
 		String type = clz.getName();
-		if (!type.startsWith("["))
+		if (type.length() != 2 || type.startsWith("["))
 			return toArrayString((Object[]) arg);
 
 		switch (type) {

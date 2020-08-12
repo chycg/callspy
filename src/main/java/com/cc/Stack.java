@@ -5,34 +5,40 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Stack {
 
-	private static boolean consoleLog;
-
-	private static String filePath;
-
-	private static int maxDepth = 5;
+	private static Config config;
 
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
 	public static void init(Config config) {
-		Stack.consoleLog = config.isConsoleLog();
-		Stack.filePath = config.getPath();
-		Stack.maxDepth = config.getMaxDepth();
-		Utils.showParamType = config.isShowParamType();
-		Utils.showJson = config.isShowJson();
-		Utils.showSimpleClzName = config.isShowSimpleClzName();
+		Stack.config = config;
 	}
 
-	public static synchronized boolean push(String method) {
-		long threadId = Thread.currentThread().getId();
-		Trace trace = map.get(threadId);
+	public static void push() {
+		Trace trace = getTrace();
 
 		if (trace == null) {
-			trace = new Trace(threadId, method, consoleLog, filePath);
-			map.put(threadId, trace);
+			long id = Thread.currentThread().getId();
+			trace = new Trace(id, config.getPath());
+			map.put(id, trace);
 		}
 
 		trace.push();
-		return true;
+	}
+
+	public static void push(String method, Object[] args) {
+		push();
+
+		if (config.isShowEntry())
+			log(method, args);
+	}
+
+	public static int getDepth() {
+		Trace trace = getTrace();
+		if (trace == null)
+			return 0;
+
+		return trace.getDepth();
+
 	}
 
 	/**
@@ -41,27 +47,30 @@ public class Stack {
 	 * @return
 	 */
 	public static boolean hasLoop() {
-		Trace trace = map.get(Thread.currentThread().getId());
+		Trace trace = getTrace();
 		if (trace == null)
 			return false;
 
-		return trace.getDepth() > maxDepth;
+		return trace.getDepth() > config.getMaxDepth();
 	}
 
-	public static synchronized void pop() {
-		Trace trace = map.get(Thread.currentThread().getId());
-		trace.pop();
+	public static void pop() {
+		getTrace().pop();
 	}
 
-	public static synchronized void log(String string) {
-		Trace trace = map.get(Thread.currentThread().getId());
-		trace.log(string);
+	/**
+	 * @return
+	 */
+	private static Trace getTrace() {
+		return map.get(Thread.currentThread().getId());
 	}
 
-	public static void push(String method, Object[] args) {
-		boolean needLog = push(method);
-		if (needLog)
-			log(method, args);
+	public static void log(String string) {
+		Trace trace = getTrace();
+		trace.write(string);
+
+		if (config.isShowConsoleLog())
+			System.out.println(trace.getInitIndent() + string);
 	}
 
 	public static void log(String method, Object[] args) {

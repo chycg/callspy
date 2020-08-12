@@ -53,7 +53,7 @@ public class Config {
 	 */
 	private int maxDepth;
 
-	private boolean consoleLog;
+	private boolean showConsoleLog;
 
 	private String path;
 
@@ -87,7 +87,7 @@ public class Config {
 		includes = properties.getProperty("include");
 		excludes = Utils.splitString(properties.getProperty("exclude"));
 
-		String value = properties.getProperty("showEntry"); // 是否显示方法进入
+		String value = properties.getProperty("showEntry", "true"); // 是否显示方法进入
 		showEntry = Boolean.valueOf(value);
 
 		value = properties.getProperty("showGetter");
@@ -99,8 +99,8 @@ public class Config {
 		value = properties.getProperty("maxDepth", "50");
 		maxDepth = Integer.parseInt(value);
 
-		value = properties.getProperty("consoleLog"); // 是否输出控制台日志
-		consoleLog = value == null ? true : Boolean.valueOf(value);
+		value = properties.getProperty("showConsoleLog", "true"); // 是否输出控制台日志
+		showConsoleLog = Boolean.valueOf(value);
 
 		value = properties.getProperty("showMethodInfo");
 		showMethodInfo = Boolean.valueOf(value);
@@ -163,8 +163,7 @@ public class Config {
 		String simpleName = method.getDeclaringClass().getSimpleName();
 
 		// packageName, className, methodName
-		if (excludes.stream().anyMatch(
-				e -> className.startsWith(e) || className.contains(e) || simpleName != null && e.endsWith(simpleName) || methodName.equals(e)))
+		if (excludes.stream().anyMatch(e -> className.contains(e) || methodName.equals(e)))
 			return false;
 
 		String key = simpleName + "." + methodName;
@@ -230,8 +229,8 @@ public class Config {
 		return maxDepth;
 	}
 
-	public boolean isConsoleLog() {
-		return consoleLog;
+	public boolean isShowConsoleLog() {
+		return showConsoleLog;
 	}
 
 	public String getPath() {

@@ -1,4 +1,4 @@
-package com.cc.spy2;
+package com.cc.spy;
 
 import net.bytebuddy.matcher.ElementMatcher;
 

@@ -1,4 +1,4 @@
-package com.cc.spy2;
+package com.cc.spy;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

@@ -62,29 +62,6 @@
 						<goals>
 							<goal>single</goal>
 						</goals>
-						<configuration>
-							<descriptors>
-								<descriptor>assembly-dyn.xml</descriptor>
-							</descriptors>
-
-							<finalName>spy-0.1</finalName>
-							<appendAssemblyId>false</appendAssemblyId>
-
-							<archive>
-								<manifestEntries>
-									<Can-Redefine-Classes>true</Can-Redefine-Classes>
-									<Premain-Class>com.cc.spy.Agent</Premain-Class>
-								</manifestEntries>
-							</archive>
-						</configuration>
-					</execution>
-
-					<execution>
-						<id>make-assembly2</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
 
 						<configuration>
 							<finalName>spy-0.2</finalName>
@@ -94,29 +71,19 @@
 							</descriptorRefs>
 
 							<descriptors>
-								<descriptor>assembly-dyn2.xml</descriptor>
+								<descriptor>assembly-dyn.xml</descriptor>
 							</descriptors>
 
 							<archive>
 								<manifestEntries>
 									<Can-Redefine-Classes>true</Can-Redefine-Classes>
-									<Premain-Class>com.cc.spy2.Agent</Premain-Class>
+									<Premain-Class>com.cc.spy.Agent</Premain-Class>
 								</manifestEntries>
 							</archive>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
-
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-shade-plugin</artifactId> <executions> <execution> <phase>package</phase> 
-				<goals> <goal>shade</goal> </goals> <configuration> <artifactSet> <includes> <include>javassist:javassist:jar:</include> <include>net.bytebuddy:byte-buddy:jar:</include> 
-				<include>net.bytebuddy:byte-buddy-agent:jar:</include> </includes> </artifactSet> <transformers> <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"> 
-				<mainClass>cn.dubby.maven.shade.plugin.Main</mainClass> <manifestEntries> <Can-Redefine-Classes>true</Can-Redefine-Classes> <Premain-Class>com.agent.MyAgent</Premain-Class> 
-				</manifestEntries> </transformer> </transformers> </configuration> </execution> </executions> </plugin> -->
-
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-jar-plugin</artifactId> <version>2.3.2</version> <configuration> 
-				<archive> <index>true</index> <manifestFile>src/main/resources/META-INF/MANIFEST.MF </manifestFile> <manifest> <addDefaultImplementationEntries 
-				/> </manifest> </archive> </configuration> </plugin> -->
 		</plugins>
 	</build>
 </project>

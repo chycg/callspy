@@ -59,7 +59,7 @@ public class Utils {
 
 		Class<?> clz = arg.getClass();
 		if (clz.getSimpleName().contains("$Proxy")) // proxy type
-			return "$Proxy";
+			return clz.getSimpleName();
 
 		if (clz.isArray())
 			return getArrayString(arg);

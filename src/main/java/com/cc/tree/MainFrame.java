@@ -159,7 +159,7 @@ public class MainFrame extends JFrame {
 				return;
 
 			DefaultMutableTreeNode target = findTarget(node, null);
-			removeTreeNode(node, null);
+			removeTreeNode(node, null, MatchType.NONE);
 			tree.setSelectionPath(new TreePath(target.getPath()));
 		}
 	};
@@ -181,7 +181,7 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getMethod());
-				removeTreeNode(root, data.getMethod());
+				removeTreeNode(root, data.getMethodName(), MatchType.METHOD);
 				tree.setSelectionPath(new TreePath(target.getPath()));
 			}
 		}
@@ -204,7 +204,7 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getClassName());
-				removeTreeNode(root, data.getClassName());
+				removeTreeNode(root, data.getClassName(), MatchType.CLASS);
 				tree.setSelectionPath(new TreePath(target.getPath()));
 			}
 		}
@@ -227,7 +227,7 @@ public class MainFrame extends JFrame {
 			Node data = (Node) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getPackageName());
-				removeTreeNode(root, data.getPackageName());
+				removeTreeNode(root, data.getPackageName(), MatchType.PACKAGE);
 				tree.setSelectionPath(new TreePath(target.getPath()));
 			}
 		}
@@ -412,16 +412,28 @@ public class MainFrame extends JFrame {
 	 * @param text
 	 *            为空删除当前节点，否则删除同名方法节点
 	 */
-	private void removeTreeNode(DefaultMutableTreeNode node, String text) {
-		int count = node.getChildCount();
-		for (int i = count - 1; i >= 0; i--) {
-			removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), text);
+	private void removeTreeNode(DefaultMutableTreeNode node, String text, MatchType type) {
+		if (node == root) {
+			int count = node.getChildCount();
+			for (int i = count - 1; i >= 0; i--) {
+				removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), text, type);
+			}
+			return;
 		}
 
-		if (node != root) {
-			Node data = (Node) node.getUserObject();
-			if (node.getChildCount() == 0 && (text == null || data.getLine().contains(text)))
-				deleteNode(node);
+		Node data = (Node) node.getUserObject();
+		if (data.isMatch(text, type)) {
+			int count = node.getChildCount();
+			for (int i = count - 1; i >= 0; i--) {
+				removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), null, MatchType.NONE);
+			}
+
+			deleteNode(node);
+		} else {
+			int count = node.getChildCount();
+			for (int i = count - 1; i >= 0; i--) {
+				removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), text, type);
+			}
 		}
 	}
 

@@ -2,6 +2,8 @@ package com.cc.tree;
 
 import java.io.Serializable;
 
+import com.cc.Utils;
+
 public class Node implements Serializable {
 
 	private static final long serialVersionUID = 3358434219949751004L;
@@ -10,6 +12,9 @@ public class Node implements Serializable {
 
 	private int count;
 
+	/**
+	 * 完整路径：package.class.method
+	 */
 	private String method;
 
 	private String result;
@@ -65,6 +70,28 @@ public class Node implements Serializable {
 			return false;
 
 		return line.trim().startsWith(this.line);
+	}
+
+	public boolean isMatch(String text, MatchType type) {
+		if (type == null)
+			return false;
+
+		if (Utils.isEmpty(text) || type.isAll())
+			return true;
+
+		if (type.isMethod()) {
+			return method.contains("." + text);
+		}
+
+		if (type.isClass()) {
+			return method.contains("." + text);
+		}
+
+		if (type.isPackage()) {
+			return method.contains("." + text);
+		}
+
+		return false;
 	}
 
 	@Override

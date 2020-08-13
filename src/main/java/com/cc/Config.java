@@ -24,8 +24,6 @@ public class Config {
 	private boolean showEntry;
 	private boolean showGetter;
 
-	private Set<String> imports;
-
 	/**
 	 * 显示方法定义而非参数值，默认false
 	 */
@@ -114,8 +112,6 @@ public class Config {
 		value = properties.getProperty("showJson");
 		showJson = Boolean.valueOf(value);
 
-		imports = Utils.splitString(properties.getProperty("imports"));
-
 		path = properties.getProperty("filePath", "./");
 	}
 
@@ -199,10 +195,6 @@ public class Config {
 
 	public boolean isShowGetter() {
 		return showGetter;
-	}
-
-	public Set<String> getImports() {
-		return imports;
 	}
 
 	public boolean isShowMethodInfo() {

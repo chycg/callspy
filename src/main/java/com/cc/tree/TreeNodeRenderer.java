@@ -50,8 +50,8 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 		super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
 		Object userObject = node.getUserObject();
-		if (userObject instanceof Node) {
-			Node data = (Node) userObject;
+		if (userObject instanceof Invocation) {
+			Invocation data = (Invocation) userObject;
 
 			if (data.getLine().contains(data.getMethod())) {
 				String tagLine = getTagLine(data);
@@ -64,7 +64,7 @@ public class TreeNodeRenderer extends DefaultTreeCellRenderer {
 		return this;
 	}
 
-	String getTagLine(Node data) {
+	String getTagLine(Invocation data) {
 		String method = data.getMethod();
 		String line = data.getLine();
 

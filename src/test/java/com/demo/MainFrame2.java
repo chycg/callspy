@@ -1,6 +1,6 @@
 package com.demo;
 
-import com.cc.tree.Node;
+import com.cc.tree.Invocation;
 
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -19,7 +19,7 @@ import javafx.stage.Stage;
 
 public class MainFrame2 extends Application {
 
-	private TreeItem<Node> rootNode = new TreeItem<>();
+	private TreeItem<Invocation> rootNode = new TreeItem<>();
 
 	private TextField tfFilter = new TextField();
 
@@ -29,7 +29,7 @@ public class MainFrame2 extends Application {
 
 	private TextField tfSelection = new TextField();
 
-	private TreeView<Node> tree = new TreeView<>(rootNode);
+	private TreeView<Invocation> tree = new TreeView<>(rootNode);
 
 	@Override
 	public void start(Stage stage) {
@@ -41,14 +41,14 @@ public class MainFrame2 extends Application {
 		scene.setFill(Color.LIGHTGRAY);
 
 		tree.setEditable(false);
-		tree.setCellFactory((TreeView<Node> p) -> new TreeCellImpl());
+		tree.setCellFactory((TreeView<Invocation> p) -> new TreeCellImpl());
 
 		box.getChildren().add(tree);
 		stage.setScene(scene);
 		stage.show();
 	}
 
-	private final class TreeCellImpl extends TreeCell<Node> {
+	private final class TreeCellImpl extends TreeCell<Invocation> {
 
 		private final ContextMenu addMenu = new ContextMenu();
 

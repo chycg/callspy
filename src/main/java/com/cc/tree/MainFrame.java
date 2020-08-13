@@ -23,6 +23,7 @@ import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuItem;
@@ -30,6 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JTree;
@@ -43,6 +45,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+
+import com.cc.graph.Painter;
 
 public class MainFrame extends JFrame {
 
@@ -63,6 +67,8 @@ public class MainFrame extends JFrame {
 
 	private JTree tree = new JTree(model);
 	private DefaultMutableTreeNode parentNode = root;
+
+	private Painter painter = new Painter();
 
 	private int lastCount = -1;
 
@@ -92,7 +98,7 @@ public class MainFrame extends JFrame {
 					return;
 
 				DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-				Node data = (Node) node.getUserObject();
+				Invocation data = (Invocation) node.getUserObject();
 				if (data == null)
 					return;
 
@@ -134,7 +140,7 @@ public class MainFrame extends JFrame {
 				return;
 
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-			Node data = (Node) node.getUserObject();
+			Invocation data = (Invocation) node.getUserObject();
 			if (data == null)
 				return;
 
@@ -178,7 +184,7 @@ public class MainFrame extends JFrame {
 			if (node == null)
 				return;
 
-			Node data = (Node) node.getUserObject();
+			Invocation data = (Invocation) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getMethod());
 				removeTreeNode(root, data.getMethodName(), MatchType.METHOD);
@@ -201,7 +207,7 @@ public class MainFrame extends JFrame {
 			if (node == null)
 				return;
 
-			Node data = (Node) node.getUserObject();
+			Invocation data = (Invocation) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getClassName());
 				removeTreeNode(root, data.getClassName(), MatchType.CLASS);
@@ -224,7 +230,7 @@ public class MainFrame extends JFrame {
 			if (node == null)
 				return;
 
-			Node data = (Node) node.getUserObject();
+			Invocation data = (Invocation) node.getUserObject();
 			if (data != null) {
 				DefaultMutableTreeNode target = findTarget(node, data.getPackageName());
 				removeTreeNode(root, data.getPackageName(), MatchType.PACKAGE);
@@ -281,18 +287,26 @@ public class MainFrame extends JFrame {
 		topBar.add(btnFile, BorderLayout.EAST);
 
 		panel.add(topBar, BorderLayout.NORTH);
+		panel.add(getCenterPane());
+		panel.add(tfSelection, BorderLayout.SOUTH);
+
+		this.add(panel);
+
+		parseFile();
+	}
+
+	private JComponent getCenterPane() {
+		JTabbedPane tabPane = new JTabbedPane();
 
 		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), new JScrollPane(taDetail));
 		rootSplit.setDividerLocation(1500);
 		rootSplit.setOneTouchExpandable(true);
 		rootSplit.setDividerSize(10);
 
-		panel.add(rootSplit);
-		panel.add(tfSelection, BorderLayout.SOUTH);
+		tabPane.addTab("Tree", rootSplit);
+		tabPane.addTab("Graph", new JScrollPane(painter));
 
-		this.add(panel);
-
-		parseFile();
+		return tabPane;
 	}
 
 	private void initListener() {
@@ -367,7 +381,7 @@ public class MainFrame extends JFrame {
 			if (node == null || node == root)
 				return;
 
-			Node data = (Node) node.getUserObject();
+			Invocation data = (Invocation) node.getUserObject();
 			tfSelection.setText(data.getMethod());
 
 			String tagLine = renderer.getTagLine(data);
@@ -403,6 +417,7 @@ public class MainFrame extends JFrame {
 		JPopupMenu popupMenu = new JPopupMenu();
 		popupMenu.add(new JMenuItem(copyAction));
 		tfSelection.setComponentPopupMenu(popupMenu);
+		tfSelection.setEditable(false);
 		taDetail.setComponentPopupMenu(popupMenu);
 	}
 
@@ -421,7 +436,7 @@ public class MainFrame extends JFrame {
 			return;
 		}
 
-		Node data = (Node) node.getUserObject();
+		Invocation data = (Invocation) node.getUserObject();
 		if (data.isMatch(text, type)) {
 			int count = node.getChildCount();
 			for (int i = count - 1; i >= 0; i--) {
@@ -429,6 +444,7 @@ public class MainFrame extends JFrame {
 			}
 
 			deleteNode(node);
+			tfFilter.setText(null);
 		} else {
 			int count = node.getChildCount();
 			for (int i = count - 1; i >= 0; i--) {
@@ -442,7 +458,7 @@ public class MainFrame extends JFrame {
 		if (text != null) {
 			DefaultMutableTreeNode next = node.getNextSibling();
 			while (next != null) {
-				Node data = (Node) next.getUserObject();
+				Invocation data = (Invocation) next.getUserObject();
 				if (!data.getLine().contains(text)) {
 					return next;
 				}
@@ -462,6 +478,7 @@ public class MainFrame extends JFrame {
 	private void deleteNode(DefaultMutableTreeNode node) {
 		model.removeNodeFromParent(node);
 		nodeCount--;
+		painter.treeChanged(node);
 
 		setTitle(title + " - rows: " + nodeCount);
 	}
@@ -503,6 +520,8 @@ public class MainFrame extends JFrame {
 						line = "";
 					}
 					setTitle(title + " - rows: " + nodeCount);
+
+					painter.init(root);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -527,13 +546,13 @@ public class MainFrame extends JFrame {
 		if (result != null)
 			line += result;
 
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Node(line, count));
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Invocation(line, count));
 
 		if (count < lastCount) {
 			parentNode = (DefaultMutableTreeNode) parentNode.getParent();
 
-			if (parentNode.getUserObject() instanceof Node) {
-				Node parent = (Node) parentNode.getUserObject();
+			if (parentNode.getUserObject() instanceof Invocation) {
+				Invocation parent = (Invocation) parentNode.getUserObject();
 				lastCount = parent.getCount();
 			} else {
 				lastCount = 0;
@@ -544,7 +563,7 @@ public class MainFrame extends JFrame {
 			addNode(node, parentNode, parentNode.getChildCount());
 			parentNode = node;
 		} else {
-			Node data = (Node) parentNode.getUserObject();
+			Invocation data = (Invocation) parentNode.getUserObject();
 			if (count == lastCount && data.isResult(line)) {
 				data.setResultLine(line);
 			} else {

@@ -25,8 +25,8 @@ public class JTreeUtil {
 	}
 
 	private static boolean isMatched(DefaultMutableTreeNode treeNode, String text) {
-		if (treeNode.getUserObject() instanceof Node) {
-			Node node = (Node) treeNode.getUserObject();
+		if (treeNode.getUserObject() instanceof Invocation) {
+			Invocation node = (Invocation) treeNode.getUserObject();
 			String line = node.getLine().toLowerCase();
 			return line.contains(text.toLowerCase());
 		}

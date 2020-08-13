@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import com.cc.Utils;
 
-public class Node implements Serializable {
+public class Invocation implements Serializable {
 
 	private static final long serialVersionUID = 3358434219949751004L;
 
@@ -19,7 +19,7 @@ public class Node implements Serializable {
 
 	private String result;
 
-	public Node(String line, int count) {
+	public Invocation(String line, int count) {
 		this.line = line.trim();
 		this.count = count;
 		this.method = line.substring(0, line.indexOf("("));
@@ -80,15 +80,15 @@ public class Node implements Serializable {
 			return true;
 
 		if (type.isMethod()) {
-			return method.contains("." + text);
+			return line.contains("." + text + "(");
 		}
 
 		if (type.isClass()) {
-			return method.contains("." + text);
+			return method.contains("." + text + ".") || method.contains("." + text + "$");
 		}
 
 		if (type.isPackage()) {
-			return method.contains("." + text);
+			return method.contains("." + text + ".");
 		}
 
 		return false;

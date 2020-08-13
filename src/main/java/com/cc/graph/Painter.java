@@ -7,8 +7,13 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
+import javax.swing.JViewport;
 import javax.swing.Scrollable;
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -35,8 +41,22 @@ public class Painter extends JComponent implements Scrollable {
 
 	private String targetName;
 
+	private double ratio = 1;
+
 	public Painter() {
-		addMouseMotionListener(new MouseAdapter() {
+		setFocusable(true);
+		addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.getKeyCode() == KeyEvent.VK_0 && e.getModifiers() == InputEvent.CTRL_MASK) {
+					ratio = 1;
+					repaint();
+				}
+			}
+		});
+
+		MouseAdapter ma = new MouseAdapter() {
+
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				targetName = null;
@@ -44,7 +64,27 @@ public class Painter extends JComponent implements Scrollable {
 				mouseY = e.getY();
 				repaint();
 			}
-		});
+
+			@Override
+			public void mouseWheelMoved(MouseWheelEvent e) {
+				if (e.getModifiers() == InputEvent.CTRL_MASK) {
+					int rotation = e.getWheelRotation();
+					ratio -= rotation * 0.1;
+					repaint();
+				} else {
+					getParent().dispatchEvent(e);
+				}
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				Painter.this.requestFocus();
+			}
+		};
+
+		addMouseListener(ma);
+		addMouseMotionListener(ma);
+		addMouseWheelListener(ma);
 	}
 
 	public void init(DefaultMutableTreeNode parent) {
@@ -93,6 +133,7 @@ public class Painter extends JComponent implements Scrollable {
 		g2d.clearRect(0, 0, getWidth(), getHeight());
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+		g2d.transform(AffineTransform.getScaleInstance(ratio, ratio));
 		int y = 10;
 		int hGap = Node.height + 30;
 
@@ -100,6 +141,8 @@ public class Painter extends JComponent implements Scrollable {
 		g2d.setColor(Color.black);
 		int offset = 5;
 		int x = 5;
+		int offsetY = ((JViewport) getParent()).getViewPosition().y;
+		System.out.println(offsetY);
 		for (Node node : nodes) {
 			int w = node.getWidth(g2d);
 			node.setX(x);
@@ -108,6 +151,10 @@ public class Painter extends JComponent implements Scrollable {
 			g2d.setStroke(stroke);
 			g2d.drawRect(x, y, w, node.getHeight());
 			g2d.drawString(node.getName(), x + Node.gap, y + Node.gap + g2d.getFontMetrics().getAscent());
+
+			g2d.drawRect(x, y + offsetY, w, node.getHeight());
+			g2d.drawString(node.getName(), x + Node.gap, y + offsetY + Node.gap + g2d.getFontMetrics().getAscent());
+
 			stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, offset }, 0f);
 			g2d.setStroke(stroke);
 			g2d.drawLine(x + w / 2, y + node.getHeight(), x + w / 2, getHeight());
@@ -176,7 +223,7 @@ public class Painter extends JComponent implements Scrollable {
 	 */
 	@Override
 	public Dimension getPreferredSize() {
-		int width = map.values().stream().mapToInt(e -> e.getWidth()).sum() + map.size() * 20;
+		int width = Math.max(map.values().stream().mapToInt(e -> e.getWidth()).sum() + map.size() * 20 + 100, 400);
 		int height = list.isEmpty() ? 100 : list.size() * 50 + 40;
 
 		return new Dimension(width, height);

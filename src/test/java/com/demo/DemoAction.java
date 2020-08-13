@@ -1,8 +1,6 @@
-package com.demo.cc;
+package com.demo;
 
-import com.demo.User;
-
-public class SpyAction {
+public class DemoAction {
 
 	public static int fun1(int a) {
 		a = 1000;

@@ -95,8 +95,6 @@ public class Utils {
 	private static String getArrayString(Object arg) {
 		Class<?> clz = arg.getClass();
 		String type = clz.getName();
-		if (type.length() != 2 || type.startsWith("["))
-			return toArrayString((Object[]) arg);
 
 		switch (type) {
 		case "[B":
@@ -119,6 +117,9 @@ public class Utils {
 		default:
 			break;
 		}
+
+		if (type.startsWith("["))
+			return toArrayString((Object[]) arg);
 
 		return arg.toString();
 	}

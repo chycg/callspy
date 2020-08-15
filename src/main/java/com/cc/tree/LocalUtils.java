@@ -3,14 +3,20 @@ package com.cc.tree;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 
-public class JTreeUtil {
+import com.cc.graph.Element;
+import com.cc.graph.Painter;
+
+public class LocalUtils {
 
 	private static List<DefaultMutableTreeNode> matchedNode = new ArrayList<>();
+
+	private static List<Element> matchedElements = new ArrayList<>();
 
 	private static String lastText;
 
@@ -34,9 +40,7 @@ public class JTreeUtil {
 		return false;
 	}
 
-	public static void selectNext(JTree tree, String text, boolean next) {
-		DefaultMutableTreeNode selection = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-
+	public static void selectNextTreeNode(JTree tree, String text, boolean next) {
 		if (!Objects.equals(lastText, text)) {
 			matchedNode.clear();
 			findNodes((DefaultMutableTreeNode) tree.getModel().getRoot(), text);
@@ -46,7 +50,8 @@ public class JTreeUtil {
 		if (matchedNode.isEmpty())
 			return;
 
-		int index = matchedNode.indexOf(selection);
+		DefaultMutableTreeNode selection = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+		int index = selection == null ? -1 : matchedNode.indexOf(selection);
 		index = next ? index + 1 : index - 1;
 
 		if (index >= matchedNode.size())
@@ -60,5 +65,34 @@ public class JTreeUtil {
 		tree.expandPath(path);
 		tree.clearSelection();
 		tree.setSelectionPath(path);
+	}
+
+	public static void selectNextElement(Painter painter, String text, boolean next) {
+		if (!Objects.equals(lastText, text)) {
+			matchedElements.clear();
+
+			String text2 = text.trim();
+			matchedElements.addAll(painter.getAllNodes().stream().filter(e -> e.getText().contains(text2)).collect(Collectors.toList()));
+			matchedElements.addAll(painter.getAllLinks().stream().filter(e -> e.getText().contains(text2)).collect(Collectors.toList()));
+
+			lastText = text2;
+		}
+
+		if (matchedElements.isEmpty())
+			return;
+
+		Element selection = painter.getSelectedElements().isEmpty() ? null : painter.getSelectedElements().get(0);
+		int index = selection == null ? -1 : matchedElements.indexOf(selection);
+		index = next ? index + 1 : index - 1;
+
+		if (index >= matchedElements.size())
+			index = index % matchedElements.size();
+
+		if (index < 0)
+			index += matchedElements.size();
+
+		Element nextOne = matchedElements.get(index);
+		painter.setSelection(nextOne);
+		painter.ensureVisible(nextOne);
 	}
 }

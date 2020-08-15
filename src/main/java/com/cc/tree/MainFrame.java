@@ -68,6 +68,7 @@ public class MainFrame extends JFrame {
 	private JTree tree = new JTree(model);
 	private DefaultMutableTreeNode parentNode = root;
 
+	private JTabbedPane tabPane = new JTabbedPane();
 	private Painter painter = new Painter();
 
 	private int lastCount = -1;
@@ -296,8 +297,6 @@ public class MainFrame extends JFrame {
 	}
 
 	private JComponent getCenterPane() {
-		JTabbedPane tabPane = new JTabbedPane();
-
 		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), new JScrollPane(taDetail));
 		rootSplit.setDividerLocation(1500);
 		rootSplit.setOneTouchExpandable(true);
@@ -309,22 +308,42 @@ public class MainFrame extends JFrame {
 		return tabPane;
 	}
 
+	public boolean isTreeView() {
+		return tabPane.getSelectedIndex() == 0;
+	}
+
+	public boolean isGraphView() {
+		return tabPane.getSelectedIndex() == 1;
+	}
+
 	private void initListener() {
 		tfFilter.getDocument().addDocumentListener(new DocumentListener() {
 
 			@Override
 			public void removeUpdate(DocumentEvent e) {
-				tree.repaint();
+				if (isTreeView()) {
+					tree.repaint();
+				} else {
+					painter.highLights(tfFilter.getText());
+				}
 			}
 
 			@Override
 			public void insertUpdate(DocumentEvent e) {
-				tree.repaint();
+				if (isTreeView()) {
+					tree.repaint();
+				} else {
+					painter.highLights(tfFilter.getText());
+				}
 			}
 
 			@Override
 			public void changedUpdate(DocumentEvent e) {
-				tree.repaint();
+				if (isTreeView()) {
+					tree.repaint();
+				} else {
+					painter.highLights(tfFilter.getText());
+				}
 			}
 		});
 
@@ -334,9 +353,17 @@ public class MainFrame extends JFrame {
 			public void keyPressed(KeyEvent e) {
 				int code = e.getKeyCode();
 				if (code == KeyEvent.VK_UP || code == KeyEvent.VK_PAGE_UP) {
-					JTreeUtil.selectNext(tree, tfFilter.getText(), false);
+					if (isTreeView()) {
+						LocalUtils.selectNextTreeNode(tree, tfFilter.getText(), false);
+					} else {
+						LocalUtils.selectNextElement(painter, tfFilter.getText(), false);
+					}
 				} else if (code == KeyEvent.VK_DOWN || code == KeyEvent.VK_PAGE_DOWN || code == KeyEvent.VK_ENTER) {
-					JTreeUtil.selectNext(tree, tfFilter.getText(), true);
+					if (isTreeView()) {
+						LocalUtils.selectNextTreeNode(tree, tfFilter.getText(), true);
+					} else {
+						LocalUtils.selectNextElement(painter, tfFilter.getText(), true);
+					}
 				}
 			}
 		});

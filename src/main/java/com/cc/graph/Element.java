@@ -55,7 +55,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 			g2d.setColor(Color.black);
 		}
 
-		g2d.drawString(getText(), x, y);
+		g2d.drawString(text, x, y);
 	}
 
 	public boolean isNode() {

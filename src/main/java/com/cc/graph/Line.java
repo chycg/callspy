@@ -67,15 +67,16 @@ public class Line extends Element {
 			paintText(g2d, getMethod(), sx + 10, sy - 5);
 			// g2d.drawString(getMethod(), sx + 10, sy - angleWidth);
 		} else if (from.getOrder() == to.getOrder()) {
-			g2d.drawLine(sx, sy, sx + rectW, sy);
+			int offsetX = 4;
+			g2d.drawLine(sx, sy, sx + rectW - offsetX, sy);
 
-			g2d.drawLine(sx + rectW, sy, sx + rectW, sy + rectH);
-			g2d.drawLine(sx + rectW, sy + rectH, sx, sy + rectH);
+			g2d.drawLine(sx + rectW - offsetX, sy, sx + rectW - offsetX, sy + rectH);
+			g2d.drawLine(sx + rectW - offsetX, sy + rectH, sx, sy + rectH);
 
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH - angleWidth2);
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH + angleWidth2);
 
-			paintText(g2d, getMethod(), sx + rectW + angleWidth, sy + g2d.getFontMetrics().getAscent());
+			paintText(g2d, getMethod(), sx + rectW + 2, sy + g2d.getFontMetrics().getAscent());
 			// g2d.drawString(getMethod(), sx + rectW + angleWidth, sy + rectH / 2);
 		} else if (from.getOrder() > to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);

@@ -505,7 +505,11 @@ public class MainFrame extends JFrame {
 	private void deleteNode(DefaultMutableTreeNode node) {
 		model.removeNodeFromParent(node);
 		nodeCount--;
-		painter.treeChanged(node);
+
+		if (node.getUserObject() instanceof Invocation) {
+			Invocation invoke = (Invocation) node.getUserObject();
+			painter.removeClassNode(invoke.getClassName());
+		}
 
 		setTitle(title + " - rows: " + nodeCount);
 	}

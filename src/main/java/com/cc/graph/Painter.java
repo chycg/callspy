@@ -10,19 +10,12 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseWheelEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +27,11 @@ import javax.swing.Scrollable;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.cc.Utils;
+import com.cc.graph.event.DataChangeEvent;
+import com.cc.graph.event.DataChangeListener;
+import com.cc.graph.event.DefaultHandler;
+import com.cc.graph.event.SelectionEvent;
+import com.cc.graph.event.SelectionListener;
 import com.cc.tree.Invocation;
 
 public class Painter extends JComponent implements Scrollable {
@@ -42,143 +40,75 @@ public class Painter extends JComponent implements Scrollable {
 
 	private Map<String, Node> map = new HashMap<>();
 
+	private List<Node> tmpNodes = new ArrayList<>();
+
 	private List<Line> links = new ArrayList<>();
 
 	private float ratio = 1;
 
 	private List<Element> selection = new ArrayList<>();
 
+	private List<SelectionListener> selectionListeners = new ArrayList<>();
+
+	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
+
+	private DefaultHandler handler = new DefaultHandler(this);
+
 	public Painter() {
 		setFocusable(true);
-		setFont(new Font("微软雅黑", Font.PLAIN, 14));
-		addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) {
-				int code = e.getKeyCode();
-				if (code == KeyEvent.VK_0 && e.getModifiers() == InputEvent.CTRL_MASK) {
-					ratio = 1;
-					repaint();
-				} else if (code == KeyEvent.VK_DELETE) {
-					removeElements(getSelectedElements());
-				} else if (code == KeyEvent.VK_UP) {
-					if (selection.size() == 1 || selection.get(0).isLine()) {
-						Line line = (Line) selection.get(0);
-						Line target = links.stream().filter(o -> o.getOrder() < line.getOrder()).sorted((a, b) -> b.getOrder() - a.getOrder())
-								.findFirst().orElse(null);
-						if (target != null) {
-							setSelection(target);
-							ensureVisible(target);
-						}
+		setFont(new Font("微软雅黑", Font.BOLD, 15));
 
-						e.consume();
-					}
-				} else if (code == KeyEvent.VK_DOWN) {
-					if (selection.size() == 1 || selection.get(0).isLine()) {
-						Line line = (Line) selection.get(0);
-						Line target = links.stream().filter(o -> o.getOrder() > line.getOrder()).findFirst().orElse(null);
-						if (target != null) {
-							setSelection(target);
-							ensureVisible(target);
-						}
-
-						e.consume();
-					}
-				} else if (code == KeyEvent.VK_LEFT) {
-					if (selection.size() == 1 || selection.get(0).isNode()) {
-						List<Node> nodes = map.values().stream().sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
-
-						Node node = (Node) selection.get(0);
-						Node target = nodes.stream().filter(o -> o.getOrder() < node.getOrder()).findFirst().orElse(null);
-						if (target != null) {
-							setSelection(target);
-							scrollRectToVisible(target.getBounds());
-						}
-
-						e.consume();
-					}
-				} else if (code == KeyEvent.VK_RIGHT) {
-					if (selection.size() == 1 || selection.get(0).isNode()) {
-						List<Node> nodes = map.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
-
-						Node node = (Node) selection.get(0);
-						Node target = nodes.stream().filter(o -> o.getOrder() > node.getOrder()).findFirst().orElse(null);
-						if (target != null) {
-							setSelection(target);
-							scrollRectToVisible(target.getBounds());
-						}
-
-						e.consume();
-					}
-				} else if (code == KeyEvent.VK_F5) {
-					Set<Node> linkedNodes = new HashSet<>();
-					links.forEach(line -> {
-						linkedNodes.add(line.getFrom());
-						linkedNodes.add(line.getTo());
-					});
-
-					Set<Node> allNodes = new HashSet<>(map.values());
-					allNodes.removeAll(linkedNodes);
-					removeElements(allNodes);
-				}
-			}
-		});
-
-		MouseAdapter ma = new MouseAdapter() {
-
-			@Override
-			public void mouseWheelMoved(MouseWheelEvent e) {
-				if (e.isControlDown()) {
-					int rotation = e.getWheelRotation();
-					ratio -= rotation * 0.1f;
-					repaint();
-				} else {
-					getParent().dispatchEvent(e);
-				}
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				Painter.this.requestFocus();
-			}
-
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				if (e.getButton() != MouseEvent.BUTTON1)
-					return;
-
-				Element element = getElementByLocation(e.getPoint());
-				if (e.isControlDown()) {
-					if (element == null)
-						return;
-
-					if (element.isSelected())
-						removeSelection(element);
-					else
-						addSelection(element);
-				} else {
-					setSelection(element);
-				}
-			}
-		};
-
-		addMouseListener(ma);
-		addMouseWheelListener(ma);
+		addKeyListener(handler);
+		addMouseListener(handler);
+		addMouseWheelListener(handler);
 	}
 
-	private Element getElementByLocation(Point p) {
+	public void addSelectionListener(SelectionListener listener) {
+		if (listener == null || selectionListeners.contains(listener))
+			return;
+
+		selectionListeners.add(listener);
+	}
+
+	public void removeSelectionListener(SelectionListener listener) {
+		if (listener != null)
+			selectionListeners.remove(listener);
+	}
+
+	public void fireDataChangeEvent(Collection<? extends Element> target) {
+		DataChangeEvent e = new DataChangeEvent(this);
+		for (DataChangeListener listener : dataChangeListeners) {
+			listener.dataChanged(e);
+		}
+	}
+
+	public void addDataChangeListener(DataChangeListener listener) {
+		if (listener == null || dataChangeListeners.contains(listener))
+			return;
+
+		dataChangeListeners.add(listener);
+	}
+
+	public void removeDataChangeListener(DataChangeListener listener) {
+		if (listener != null)
+			dataChangeListeners.remove(listener);
+	}
+
+	private void fireSelectionChangeEvent() {
+		SelectionEvent e = new SelectionEvent(this);
+		for (SelectionListener listener : selectionListeners) {
+			listener.selectionChanged(e);
+		}
+	}
+
+	public Element getElementByLocation(Point p) {
 		Point2D p2 = new Point2D.Float(p.x / ratio, p.y / ratio);
-		for (Line e : links) {
-			if (e.isContain(p2))
-				return e;
-		}
+		Element target = getAllLinks().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		if (target != null)
+			return target;
 
-		for (Node e : map.values()) {
-			if (e.isContain(p2)) {
-				return e;
-			}
-		}
-
-		return null;
+		target = getAllNodes().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		return target;
 	}
 
 	public void addSelection(Element e) {
@@ -189,6 +119,7 @@ public class Painter extends JComponent implements Scrollable {
 		selection.add(e);
 
 		repaint();
+		fireSelectionChangeEvent();
 	}
 
 	public void removeSelection(Element e) {
@@ -198,11 +129,14 @@ public class Painter extends JComponent implements Scrollable {
 		e.setSelected(false);
 		selection.remove(e);
 		repaint();
+
+		fireSelectionChangeEvent();
 	}
 
 	public void clearSelection() {
 		selection.forEach(e -> e.setSelected(false));
 		selection.clear();
+		fireSelectionChangeEvent();
 
 		repaint();
 	}
@@ -214,13 +148,12 @@ public class Painter extends JComponent implements Scrollable {
 			selection.add(e);
 		}
 
+		fireSelectionChangeEvent();
 		repaint();
 	}
 
 	private Rectangle getViewRect() {
-		JViewport port = (JViewport) getParent();
-		Rectangle rect = port.getViewRect();
-		return rect;
+		return ((JViewport) getParent()).getViewRect();
 	}
 
 	/**
@@ -239,10 +172,9 @@ public class Painter extends JComponent implements Scrollable {
 		if (Utils.isEmpty(c))
 			return;
 
-		for (Element e : c) {
-			remove0(e);
-		}
+		c.forEach(e -> remove0(e));
 
+		fireDataChangeEvent(c);
 		repaint();
 	}
 
@@ -272,14 +204,14 @@ public class Painter extends JComponent implements Scrollable {
 
 	public void init(DefaultMutableTreeNode parent) {
 		if (parent.getUserObject() instanceof Invocation) {
-			Invocation o = (Invocation) parent.getUserObject();
-			String className = o.getClassName();
+			Invocation source = (Invocation) parent.getUserObject();
+			String className = source.getClassName();
 
 			int count = parent.getChildCount();
 			for (int i = 0; i < count; i++) {
 				DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
-				Invocation o2 = (Invocation) child.getUserObject();
-				addLine(className, o2.getClassName(), o.getMethodName());
+				Invocation target = (Invocation) child.getUserObject();
+				addLine(className, target.getClassName(), target.getMethodName());
 				init(child);
 			}
 		} else {
@@ -294,55 +226,84 @@ public class Painter extends JComponent implements Scrollable {
 		return new ArrayList<>(selection);
 	}
 
-	public void treeChanged(DefaultMutableTreeNode node) {
-		if (node.getUserObject() instanceof Invocation) {
-			Invocation o = (Invocation) node.getUserObject();
-
-			Node node0 = map.get(o.getClassName());
+	public void removeClassNode(String className) {
+		Node node0 = map.get(className);
+		if (node0 != null)
 			removeElements(Arrays.asList(node0));
-		}
 	}
 
 	public void addLine(String from, String to, String method) {
-		if (!map.containsKey(from))
-			map.put(from, new Node(from, map.size()));
+		List<Element> targets = new ArrayList<>();
+		if (!map.containsKey(from)) {
+			Node fromNode = new Node(from, map.size());
+			map.put(from, fromNode);
 
-		if (!map.containsKey(to))
-			map.put(to, new Node(to, map.size()));
+			targets.add(fromNode);
+		}
+
+		if (!map.containsKey(to)) {
+			Node toNode = new Node(to, map.size());
+			map.put(to, toNode);
+
+			targets.add(toNode);
+		}
 
 		Node fromNode = map.get(from);
 		Node toNode = map.get(to);
 
 		if (links.size() > 1) {
 			Line last = links.get(links.size() - 1);
-			if (last.getFrom() == fromNode && last.getTo() == toNode) {
+			if (last.getFrom() == fromNode && last.getTo() == toNode && last.getText().equals(method)) {
 				last.addCount();
 				return;
 			}
 		}
 
-		links.add(new Line(fromNode, toNode, method, links.size()));
+		Line line = new Line(fromNode, toNode, method, links.size());
+		links.add(line);
+		targets.add(line);
+
+		fireDataChangeEvent(targets);
+	}
+
+	private int computeSize() {
+		tmpNodes.clear();
+		tmpNodes = map.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
+
+		Graphics2D g2d = (Graphics2D) getGraphics();
+		int offsetX = 20;
+		for (Node node : tmpNodes) {
+			node.setX(offsetX);
+			offsetX += node.getWidth(g2d) + 20;
+		}
+
+		int i = 1;
+		for (Line line : links) {
+			line.setOrder(i++);
+		}
+
+		return offsetX;
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
+		computeSize();
 		Graphics2D g2d = (Graphics2D) g.create();
 		g2d.clearRect(0, 0, getWidth(), getHeight());
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.transform(AffineTransform.getScaleInstance(ratio, ratio));
 
-		List<Node> nodes = map.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
 		g2d.setColor(Color.black);
-		int offsetX = 20;
 		Rectangle rect = getViewRect();
 		int offsetY = rect.y + rect.height - 40;
-		for (Node node : nodes) {
-			node.setX(offsetX);
+		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
+		BasicStroke selectedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 4, 4 }, 0f);
+
+		for (Node node : tmpNodes) {
 			node.paint(g2d);
 
-			BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
 			g2d.setStroke(stroke);
-			g2d.setColor(Color.gray);
+			g2d.setColor(Color.lightGray);
 			g2d.drawLine(node.getCenterX(), 10 + node.getHeight(), node.getCenterX(), getHeight());
 
 			// bottom class
@@ -352,17 +313,13 @@ public class Painter extends JComponent implements Scrollable {
 
 			if (node.isSelected()) {
 				g2d.setColor(Color.blue);
-				stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 4, 4 }, 0f);
-				g2d.setStroke(stroke);
+				g2d.setStroke(selectedStroke);
 				g2d.drawRect(node.getX() - 2, 8, node.getWidth() + 4, getHeight() - 10);
 			}
-
-			offsetX += node.getWidth() + 20;
 		}
 
-		int i = 1;
+		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
 		for (Line line : links) {
-			line.setOrder(i++);
 			line.paint(g2d);
 		}
 	}
@@ -392,12 +349,20 @@ public class Painter extends JComponent implements Scrollable {
 		return getPreferredSize();
 	}
 
+	public float getRatio() {
+		return ratio;
+	}
+
+	public void setRatio(float ratio) {
+		this.ratio = ratio;
+	}
+
 	/**
 	 * @return
 	 */
 	@Override
 	public Dimension getPreferredSize() {
-		int width = map.values().stream().mapToInt(e -> e.getWidth()).sum() + map.size() * 20;
+		int width = computeSize() + 100;
 		int height = links.isEmpty() ? 100 : links.size() * 50 + 40;
 
 		return new Dimension(width, height);

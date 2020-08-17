@@ -5,10 +5,17 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class Element implements Serializable, Comparable<Element> {
 
 	private static final long serialVersionUID = -8293213167943705488L;
+
+	private static final AtomicInteger idMaker = new AtomicInteger(1);
+
+	private final int id;
+
+	private final Painter parent;
 
 	private final String text;
 
@@ -18,26 +25,18 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 	private int order;
 
-	public Element(String text, int order) {
-		this.text = text;
+	private Object userObject;
+
+	public Element(int id, String text, int order, Painter parent) {
+		this.id = id <= 0 ? idMaker.getAndIncrement() : id;
 		this.order = order;
+		this.text = text;
+		this.parent = parent;
 	}
 
 	public abstract void paint(Graphics2D g);
 
 	public abstract Rectangle getBounds();
-
-	public String getText() {
-		return text;
-	}
-
-	public int getOrder() {
-		return order;
-	}
-
-	public void setOrder(int order) {
-		this.order = order;
-	}
 
 	public abstract ElementType getType();
 
@@ -50,7 +49,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 			g2d.setColor(isSelected() ? Color.green.darker() : Color.red);
 		} else if (isSelected()) {
-			g2d.setColor(Color.green.darker());
+			g2d.setColor(Color.red);
 		} else {
 			g2d.setColor(Color.black);
 		}
@@ -66,12 +65,40 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		return getType() == ElementType.LINE;
 	}
 
+	public Painter getParent() {
+		return parent;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public int getOrder() {
+		return order;
+	}
+
+	public void setOrder(int order) {
+		this.order = order;
+	}
+
 	public void setSelected(boolean selected) {
 		this.selected = selected;
 	}
 
 	public boolean isSelected() {
 		return selected;
+	}
+
+	public Object getUserObject() {
+		return userObject;
+	}
+
+	public void setUserObject(Object userObject) {
+		this.userObject = userObject;
 	}
 
 	protected final int getStrWidth(Graphics2D g, String text) {
@@ -112,5 +139,27 @@ public abstract class Element implements Serializable, Comparable<Element> {
 			return 1;
 
 		return 0;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (int) (id ^ id >>> 32);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Element other = (Element) obj;
+		if (id != other.id)
+			return false;
+		return true;
 	}
 }

@@ -16,9 +16,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
@@ -38,11 +40,11 @@ public class Painter extends JComponent implements Scrollable {
 
 	private static final long serialVersionUID = -3629016612452078796L;
 
-	private Map<String, Node> map = new HashMap<>();
+	private Map<String, Node> nodes = new HashMap<>();
 
 	private List<Node> tmpNodes = new ArrayList<>();
 
-	private List<Line> links = new ArrayList<>();
+	private TreeMap<Integer, Line> links = new TreeMap<>();
 
 	private float ratio = 1;
 
@@ -53,6 +55,8 @@ public class Painter extends JComponent implements Scrollable {
 	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 
 	private DefaultHandler handler = new DefaultHandler(this);
+
+	private boolean popupEvent = true;
 
 	public Painter() {
 		setFocusable(true);
@@ -75,8 +79,11 @@ public class Painter extends JComponent implements Scrollable {
 			selectionListeners.remove(listener);
 	}
 
-	public void fireDataChangeEvent(Collection<? extends Element> target) {
-		DataChangeEvent e = new DataChangeEvent(this);
+	public void fireDataChangeEvent(int eventType, Collection<? extends Element> target) {
+		if (!popupEvent)
+			return;
+
+		DataChangeEvent e = new DataChangeEvent(this, eventType, target);
 		for (DataChangeListener listener : dataChangeListeners) {
 			listener.dataChanged(e);
 		}
@@ -94,8 +101,11 @@ public class Painter extends JComponent implements Scrollable {
 			dataChangeListeners.remove(listener);
 	}
 
-	private void fireSelectionChangeEvent() {
-		SelectionEvent e = new SelectionEvent(this);
+	private void fireSelectionChangeEvent(int eventType, Collection<? extends Element> target) {
+		if (!popupEvent)
+			return;
+
+		SelectionEvent e = new SelectionEvent(this, eventType, target);
 		for (SelectionListener listener : selectionListeners) {
 			listener.selectionChanged(e);
 		}
@@ -119,7 +129,7 @@ public class Painter extends JComponent implements Scrollable {
 		selection.add(e);
 
 		repaint();
-		fireSelectionChangeEvent();
+		fireSelectionChangeEvent(SelectionEvent.ADD_SELECTION, Arrays.asList(e));
 	}
 
 	public void removeSelection(Element e) {
@@ -130,13 +140,13 @@ public class Painter extends JComponent implements Scrollable {
 		selection.remove(e);
 		repaint();
 
-		fireSelectionChangeEvent();
+		fireSelectionChangeEvent(SelectionEvent.REMOVE_SELECTION, Arrays.asList(e));
 	}
 
 	public void clearSelection() {
 		selection.forEach(e -> e.setSelected(false));
 		selection.clear();
-		fireSelectionChangeEvent();
+		fireSelectionChangeEvent(SelectionEvent.CLEAR_SELETION, new ArrayList<>());
 
 		repaint();
 	}
@@ -148,7 +158,7 @@ public class Painter extends JComponent implements Scrollable {
 			selection.add(e);
 		}
 
-		fireSelectionChangeEvent();
+		fireSelectionChangeEvent(SelectionEvent.SET_SELETION, Arrays.asList(e));
 		repaint();
 	}
 
@@ -174,7 +184,16 @@ public class Painter extends JComponent implements Scrollable {
 
 		c.forEach(e -> remove0(e));
 
-		fireDataChangeEvent(c);
+		repaint();
+	}
+
+	public void removeElements(Object source, Collection<? extends Element> c) {
+		if (Utils.isEmpty(c))
+			return;
+
+		c.forEach(e -> remove0(e));
+
+		fireDataChangeEvent(DataChangeEvent.REMOVE, c);
 		repaint();
 	}
 
@@ -185,24 +204,43 @@ public class Painter extends JComponent implements Scrollable {
 		selection.remove(element);
 		if (element.isNode()) {
 			String className = element.getText();
-			map.remove(className);
+			nodes.remove(className);
 
-			Set<Line> relatedLines = links.stream().filter(e -> e.getFrom().getText().equals(className) || e.getTo().getText().equals(className))
-					.collect(Collectors.toSet());
+			Set<Line> relatedLines = links.values().stream()
+					.filter(e -> e.getFrom().getText().equals(className) || e.getTo().getText().equals(className)).collect(Collectors.toSet());
 
-			links.removeAll(relatedLines);
+			links.values().removeAll(relatedLines);
 			selection.removeAll(relatedLines);
+
+			fireDataChangeEvent(DataChangeEvent.REMOVE, relatedLines);
 		} else if (element.isLine()) {
 			Line line = (Line) element;
-			String text = line.getText();
+			links.remove(line.getId());
 
+			String text = line.getText();
 			Node from = line.getFrom();
-			links.remove(element);
-			links.removeIf(e -> e.getFrom() == from && e.getText().equals(text)); // 删除同类下的同名方法
+			Set<Line> sameInvocations = new HashSet<>();
+
+			// 删除同类下的同名方法
+			links.values().removeIf(e -> {
+				if (e.getFrom() == from && e.getText().equals(text)) {
+					selection.remove(e);
+					sameInvocations.add(e);
+					return true;
+				}
+				return false;
+			});
+
+			fireDataChangeEvent(DataChangeEvent.REMOVE, sameInvocations);
 		}
 	}
 
-	public void init(DefaultMutableTreeNode parent) {
+	/**
+	 * init from tree
+	 * 
+	 * @param parent
+	 */
+	void init(DefaultMutableTreeNode parent) {
 		if (parent.getUserObject() instanceof Invocation) {
 			Invocation source = (Invocation) parent.getUserObject();
 			String className = source.getClassName();
@@ -210,8 +248,8 @@ public class Painter extends JComponent implements Scrollable {
 			int count = parent.getChildCount();
 			for (int i = 0; i < count; i++) {
 				DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
-				Invocation target = (Invocation) child.getUserObject();
-				addLine(className, target.getClassName(), target.getMethodName());
+				Invocation invoke = (Invocation) child.getUserObject();
+				addLine(className, invoke.getClassName(), invoke.getMethodName(), invoke);
 				init(child);
 			}
 		} else {
@@ -226,60 +264,72 @@ public class Painter extends JComponent implements Scrollable {
 		return new ArrayList<>(selection);
 	}
 
-	public void removeClassNode(String className) {
-		Node node0 = map.get(className);
-		if (node0 != null)
-			removeElements(Arrays.asList(node0));
+	public void removeLine(String className, String methodName, Invocation invocation) {
+		popupEvent = false;
+		Set<Line> lines = getAllLinks().stream()
+				.filter(e -> e.getTo().getText().endsWith(className) && e.getText().equals(methodName) && invocation == e.getUserObject())
+				.collect(Collectors.toSet());
+
+		if (lines.size() > 0)
+			removeElements(lines);
+
+		popupEvent = true;
 	}
 
-	public void addLine(String from, String to, String method) {
+	public Line addLine(String from, String to, String method, Object invocation) {
 		List<Element> targets = new ArrayList<>();
-		if (!map.containsKey(from)) {
-			Node fromNode = new Node(from, map.size());
-			map.put(from, fromNode);
+		if (!nodes.containsKey(from)) {
+			Node fromNode = new Node(from, nodes.size(), this);
+			nodes.put(from, fromNode);
 
 			targets.add(fromNode);
 		}
 
-		if (!map.containsKey(to)) {
-			Node toNode = new Node(to, map.size());
-			map.put(to, toNode);
+		if (!nodes.containsKey(to)) {
+			Node toNode = new Node(to, nodes.size(), this);
+			nodes.put(to, toNode);
 
 			targets.add(toNode);
 		}
 
-		Node fromNode = map.get(from);
-		Node toNode = map.get(to);
+		Node fromNode = nodes.get(from);
+		Node toNode = nodes.get(to);
 
 		if (links.size() > 1) {
-			Line last = links.get(links.size() - 1);
+			Line last = links.lastEntry().getValue();
 			if (last.getFrom() == fromNode && last.getTo() == toNode && last.getText().equals(method)) {
 				last.addCount();
-				return;
+				return last;
 			}
 		}
 
 		Line line = new Line(fromNode, toNode, method, links.size());
-		links.add(line);
+		line.setUserObject(invocation);
+		links.put(line.getId(), line);
 		targets.add(line);
 
-		fireDataChangeEvent(targets);
+		fireDataChangeEvent(DataChangeEvent.ADD, targets);
+
+		return line;
 	}
 
 	private int computeSize() {
 		tmpNodes.clear();
-		tmpNodes = map.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
+		tmpNodes = nodes.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
 
 		Graphics2D g2d = (Graphics2D) getGraphics();
 		int offsetX = 20;
 		for (Node node : tmpNodes) {
 			node.setX(offsetX);
+			node.resetCounts();
 			offsetX += node.getWidth(g2d) + 20;
 		}
 
 		int i = 1;
-		for (Line line : links) {
+		for (Line line : getAllLinks()) {
 			line.setOrder(i++);
+			line.getFrom().addFromCount();
+			line.getTo().addToCount();
 		}
 
 		return offsetX;
@@ -297,39 +347,36 @@ public class Painter extends JComponent implements Scrollable {
 		Rectangle rect = getViewRect();
 		int offsetY = rect.y + rect.height - 40;
 		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
-		BasicStroke selectedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 4, 4 }, 0f);
 
 		for (Node node : tmpNodes) {
 			node.paint(g2d);
-
 			g2d.setStroke(stroke);
 			g2d.setColor(Color.lightGray);
 			g2d.drawLine(node.getCenterX(), 10 + node.getHeight(), node.getCenterX(), getHeight());
+
+			g2d.setColor(Color.magenta.brighter());
+			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1,
+					(rect.y + rect.height / 2) / ratio);
 
 			// bottom class
 			g2d.translate(0, offsetY / ratio);
 			node.paint(g2d);
 			g2d.translate(0, -offsetY / ratio);
 
-			if (node.isSelected()) {
-				g2d.setColor(Color.blue);
-				g2d.setStroke(selectedStroke);
-				g2d.drawRect(node.getX() - 2, 8, node.getWidth() + 4, getHeight() - 10);
-			}
 		}
 
 		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
-		for (Line line : links) {
+		for (Line line : getAllLinks()) {
 			line.paint(g2d);
 		}
 	}
 
 	public void highLights(String text) {
-		map.values().forEach(e -> {
+		nodes.values().forEach(e -> {
 			e.highLighted(text);
 		});
 
-		links.forEach(e -> {
+		getAllLinks().forEach(e -> {
 			e.highLighted(text);
 		});
 
@@ -337,11 +384,11 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	public List<Node> getAllNodes() {
-		return map.values().stream().sorted().collect(Collectors.toList());
+		return nodes.values().stream().sorted().collect(Collectors.toList());
 	}
 
 	public List<Line> getAllLinks() {
-		return new ArrayList<>(links);
+		return new ArrayList<>(links.values());
 	}
 
 	@Override

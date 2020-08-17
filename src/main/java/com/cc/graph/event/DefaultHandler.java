@@ -100,7 +100,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 			List<Node> allNodes = painter.getAllNodes();
 			allNodes.removeAll(linkedNodes);
 			painter.removeElements(allNodes);
-			painter.fireDataChangeEvent(allNodes);
+			painter.fireDataChangeEvent(DataChangeEvent.REMOVE, allNodes);
 		}
 	}
 

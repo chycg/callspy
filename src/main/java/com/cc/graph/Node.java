@@ -14,12 +14,22 @@ public class Node extends Element {
 
 	public static final int height = 20;
 
+	private static final BasicStroke selectedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 4, 8 }, 0f);
+
 	private int width;
 
 	private int x;
 
-	public Node(String name, int order) {
-		super(name, order);
+	private int fromCount;
+
+	private int toCount;
+
+	public Node(String name, int order, Painter parent) {
+		this(0, name, order, parent);
+	}
+
+	public Node(int id, String name, int order, Painter parent) {
+		super(id, name, order, parent);
 	}
 
 	@Override
@@ -51,8 +61,33 @@ public class Node extends Element {
 		this.x = x;
 	}
 
+	public void resetCounts() {
+		this.fromCount = 0;
+		this.toCount = 0;
+	}
+
+	public String getCounter() {
+		return fromCount + ":" + toCount;
+	}
+
 	public int getHeight() {
 		return height;
+	}
+
+	public int getFromCount() {
+		return fromCount;
+	}
+
+	public int getToCount() {
+		return toCount;
+	}
+
+	public void addFromCount() {
+		fromCount++;
+	}
+
+	public void addToCount() {
+		toCount++;
 	}
 
 	@Override
@@ -64,8 +99,13 @@ public class Node extends Element {
 		int h2 = getHeight();
 
 		g2d.drawRect(x, y, w, h2 + 2);
-
 		paintText(g2d, getText(), x + Node.gap, y + Node.gap + g2d.getFontMetrics().getAscent());
+
+		if (isSelected()) { // print border
+			g2d.setColor(Color.blue);
+			g2d.setStroke(selectedStroke);
+			g2d.drawRect(x - 2, 8, w + 4, getParent().getHeight() - 10);
+		}
 	}
 
 	@Override

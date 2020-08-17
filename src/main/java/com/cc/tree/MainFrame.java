@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -42,11 +43,12 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import com.cc.graph.Element;
 import com.cc.graph.Painter;
+import com.cc.graph.event.DataChangeEvent;
+import com.cc.graph.event.DataChangeListener;
 
 public class MainFrame extends JFrame {
 
@@ -151,25 +153,25 @@ public class MainFrame extends JFrame {
 		}
 	};
 
-	private AbstractAction removeAction = new AbstractAction("remove") {
-
-		private static final long serialVersionUID = -5615934028594122494L;
-
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			TreePath path = tree.getSelectionPath();
-			if (path == null)
-				return;
-
-			DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-			if (node == null)
-				return;
-
-			DefaultMutableTreeNode target = findTarget(node, null);
-			removeTreeNode(node, null, MatchType.NONE);
-			tree.setSelectionPath(new TreePath(target.getPath()));
-		}
-	};
+	// private AbstractAction removeAction = new AbstractAction("remove") {
+	//
+	// private static final long serialVersionUID = -5615934028594122494L;
+	//
+	// @Override
+	// public void actionPerformed(ActionEvent e) {
+	// TreePath path = tree.getSelectionPath();
+	// if (path == null)
+	// return;
+	//
+	// DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+	// if (node == null)
+	// return;
+	//
+	// DefaultMutableTreeNode target = findTarget(node, null);
+	// removeTreeNode(node, null, MatchType.NONE);
+	// tree.setSelectionPath(new TreePath(target.getPath()));
+	// }
+	// };
 
 	private AbstractAction removeMethodAction = new AbstractAction("removeMethod") {
 
@@ -177,6 +179,12 @@ public class MainFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			Object source = e.getSource();
+			if (source instanceof String) {
+				removeTreeNode(root, (String) source, MatchType.METHOD);
+				return;
+			}
+
 			TreePath path = tree.getSelectionPath();
 			if (path == null)
 				return;
@@ -200,6 +208,12 @@ public class MainFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
+			Object source = e.getSource();
+			if (source instanceof String) {
+				removeTreeNode(root, (String) source, MatchType.CLASS);
+				return;
+			}
+
 			TreePath path = tree.getSelectionPath();
 			if (path == null)
 				return;
@@ -387,7 +401,7 @@ public class MainFrame extends JFrame {
 		});
 
 		JPopupMenu popup = new JPopupMenu();
-		popup.add(new JMenuItem(removeAction));
+		// popup.add(new JMenuItem(removeAction));
 		popup.add(new JMenuItem(removeMethodAction));
 		popup.add(new JMenuItem(removeClassAction));
 		popup.add(new JMenuItem(removePackageAction));
@@ -446,6 +460,26 @@ public class MainFrame extends JFrame {
 		tfSelection.setComponentPopupMenu(popupMenu);
 		tfSelection.setEditable(false);
 		taDetail.setComponentPopupMenu(popupMenu);
+
+		painter.addDataChangeListener(new DataChangeListener() {
+
+			@Override
+			public void dataChanged(DataChangeEvent e) {
+				int type = e.getEventType();
+				if (type == DataChangeEvent.REMOVE) {
+					Collection<? extends Element> targets = e.getElements();
+					for (Element c : targets) {
+						if (c.isNode()) {
+							ActionEvent event = new ActionEvent(c.getText(), c.getId(), "deleteClass");
+							removeClassAction.actionPerformed(event);
+						} else if (c.isLine()) {
+							ActionEvent event = new ActionEvent(c.getText(), c.getId(), "deleteMethod");
+							removeMethodAction.actionPerformed(event);
+						}
+					}
+				}
+			}
+		});
 	}
 
 	/**
@@ -464,10 +498,10 @@ public class MainFrame extends JFrame {
 		}
 
 		Invocation data = (Invocation) node.getUserObject();
-		if (data.isMatch(text, type)) {
+		if (data.isMatch(text, type)) { // 当前节点匹配删除条件
 			int count = node.getChildCount();
 			for (int i = count - 1; i >= 0; i--) {
-				removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), null, MatchType.NONE);
+				removeTreeNode((DefaultMutableTreeNode) node.getChildAt(i), null, MatchType.ALL); // 下级都无条件删除
 			}
 
 			deleteNode(node);
@@ -497,9 +531,17 @@ public class MainFrame extends JFrame {
 		return target;
 	}
 
-	private void addNode(MutableTreeNode node, MutableTreeNode parentNode, int index) {
+	private void addNode(DefaultMutableTreeNode node, DefaultMutableTreeNode parentNode, int index) {
 		model.insertNodeInto(node, parentNode, index);
 		nodeCount++;
+
+		if (parentNode == root)
+			return;
+
+		Invocation source = (Invocation) parentNode.getUserObject();
+		String className = source.getClassName();
+		Invocation invoke = (Invocation) node.getUserObject();
+		painter.addLine(className, invoke.getClassName(), invoke.getMethodName(), invoke);
 	}
 
 	private void deleteNode(DefaultMutableTreeNode node) {
@@ -508,7 +550,7 @@ public class MainFrame extends JFrame {
 
 		if (node.getUserObject() instanceof Invocation) {
 			Invocation invoke = (Invocation) node.getUserObject();
-			painter.removeClassNode(invoke.getClassName());
+			painter.removeLine(invoke.getClassName(), invoke.getMethodName(), invoke);
 		}
 
 		setTitle(title + " - rows: " + nodeCount);
@@ -530,6 +572,7 @@ public class MainFrame extends JFrame {
 					title = file.getName() + " - " + list.get(0);
 
 					String line = "";
+					int row = 1;
 					for (int i = 2; i < list.size(); i++) {
 						String e = list.get(i);
 						if (!e.startsWith(spaceChar))
@@ -547,12 +590,12 @@ public class MainFrame extends JFrame {
 							k++;
 						}
 
-						addNode(line);
+						addNode(line, row++);
 						line = "";
 					}
 					setTitle(title + " - rows: " + nodeCount);
 
-					painter.init(root);
+					// painter.init(root);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -562,7 +605,7 @@ public class MainFrame extends JFrame {
 		}.execute();
 	}
 
-	private void addNode(String line) {
+	private void addNode(String line, int row) {
 		int count = countSpace(line);
 		int index = line.indexOf("->");
 
@@ -598,8 +641,8 @@ public class MainFrame extends JFrame {
 			if (count == lastCount && data.isResult(line)) {
 				data.setResultLine(line);
 			} else {
-				TreeNode pp = parentNode.getParent();
-				addNode(node, (MutableTreeNode) pp, pp.getChildCount());
+				DefaultMutableTreeNode pp = (DefaultMutableTreeNode) parentNode.getParent();
+				addNode(node, pp, pp.getChildCount());
 				parentNode = node;
 			}
 		}

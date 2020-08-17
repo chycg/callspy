@@ -19,7 +19,11 @@ public class Line extends Element {
 	private int count = 1;
 
 	public Line(Node from, Node to, String method, int order) {
-		super(method, order);
+		this(0, from, to, method, order);
+	}
+
+	public Line(int id, Node from, Node to, String method, int order) {
+		super(id, method, order, from.getParent());
 		this.from = from;
 		this.to = to;
 	}
@@ -55,19 +59,21 @@ public class Line extends Element {
 		int sx = from.getCenterX();
 		int tx = to.getCenterX();
 		int sy = getOrder() * 50;
+		String content = getOrder() + ": " + getMethod();
 
 		g2d.setStroke(new BasicStroke(isSelected() ? 2f : 1f));
-		g2d.setColor(isSelected() ? Color.green.darker() : Color.black);
+		g2d.setColor(isSelected() ? Color.blue : Color.black);
 
 		if (from.getOrder() < to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy + angleWidth2);
 
-			paintText(g2d, getMethod(), sx + 10, sy - 5);
-			// g2d.drawString(getMethod(), sx + 10, sy - angleWidth);
+			paintText(g2d, content, sx + 10, sy - 5);
+			if (tx - sx > 500)
+				paintText(g2d, content, tx - getStrWidth(g2d, content) - 10, sy - 5);
 		} else if (from.getOrder() == to.getOrder()) {
-			int offsetX = 4;
+			int offsetX = 8;
 			g2d.drawLine(sx, sy, sx + rectW - offsetX, sy);
 
 			g2d.drawLine(sx + rectW - offsetX, sy, sx + rectW - offsetX, sy + rectH);
@@ -76,15 +82,15 @@ public class Line extends Element {
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH - angleWidth2);
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH + angleWidth2);
 
-			paintText(g2d, getMethod(), sx + rectW + 2, sy + g2d.getFontMetrics().getAscent());
-			// g2d.drawString(getMethod(), sx + rectW + angleWidth, sy + rectH / 2);
+			paintText(g2d, content, sx + rectW + 2, sy + g2d.getFontMetrics().getAscent());
 		} else if (from.getOrder() > to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy + angleWidth2);
 
-			paintText(g2d, getMethod(), sx - getStrWidth(g2d, getMethod()) - 10, sy - 5);
-			// g2d.drawString(getMethod(), sx - getStrWidth(g2d, getMethod()) - 10, sy - angleWidth);
+			paintText(g2d, content, sx - getStrWidth(g2d, content) - 10, sy - 5);
+			if (sx - tx > 500)
+				paintText(g2d, content, tx + 10, sy - 5);
 		}
 	}
 

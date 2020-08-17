@@ -2,7 +2,7 @@ package com.cc.tree;
 
 public enum MatchType {
 
-	NONE,
+	ALL,
 
 	METHOD,
 
@@ -23,6 +23,6 @@ public enum MatchType {
 	}
 
 	public boolean isAll() {
-		return this == NONE;
+		return this == ALL;
 	}
 }

@@ -70,7 +70,7 @@ public class Line extends Element {
 			g2d.drawLine(tx, sy, tx - angleWidth, sy + angleWidth2);
 
 			paintText(g2d, content, sx + 10, sy - 5);
-			if (tx - sx > 500)
+			if (tx - sx > 800)
 				paintText(g2d, content, tx - getStrWidth(g2d, content) - 10, sy - 5);
 		} else if (from.getOrder() == to.getOrder()) {
 			int offsetX = 8;
@@ -89,7 +89,7 @@ public class Line extends Element {
 			g2d.drawLine(tx, sy, tx + angleWidth, sy + angleWidth2);
 
 			paintText(g2d, content, sx - getStrWidth(g2d, content) - 10, sy - 5);
-			if (sx - tx > 500)
+			if (sx - tx > 800)
 				paintText(g2d, content, tx + 10, sy - 5);
 		}
 	}

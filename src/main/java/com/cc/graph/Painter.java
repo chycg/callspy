@@ -178,6 +178,30 @@ public class Painter extends JComponent implements Scrollable {
 		scrollRectToVisible(rect);
 	}
 
+	public void ensureLineVisible(Element target) {
+		if (target == null)
+			return;
+
+		if (target.isLine()) {
+			ensureVisible(target);
+			return;
+		}
+
+		Node node = (Node) target;
+		if (node.getFromCount() == 0 && node.getToCount() == 0)
+			return;
+
+		Line line = getAllLinks().stream().filter(e -> e.getFrom() == node || e.getTo() == node).findFirst().orElse(null);
+		Rectangle rect = line.getBounds();
+
+		Rectangle viewRect = getViewRect();
+		int offsetY = (int) ((viewRect.y + viewRect.height - 40) / ratio);
+		if (rect.y >= offsetY - 10)
+			rect.y = rect.y + 50;
+
+		scrollRectToVisible(rect);
+	}
+
 	public void removeElements(Collection<? extends Element> c) {
 		if (Utils.isEmpty(c))
 			return;
@@ -351,18 +375,17 @@ public class Painter extends JComponent implements Scrollable {
 		for (Node node : tmpNodes) {
 			node.paint(g2d);
 			g2d.setStroke(stroke);
-			g2d.setColor(Color.lightGray);
+			g2d.setColor(node.isSelected() ? Color.black : Color.lightGray);
 			g2d.drawLine(node.getCenterX(), 10 + node.getHeight(), node.getCenterX(), getHeight());
 
-			g2d.setColor(Color.magenta.brighter());
-			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1,
-					(rect.y + rect.height / 2) / ratio);
+			g2d.setColor(Color.cyan.darker());
+			int counterY = (int) ((rect.y + rect.height / 2) / ratio) / 50 * 50;
+			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - 5);
 
 			// bottom class
 			g2d.translate(0, offsetY / ratio);
 			node.paint(g2d);
 			g2d.translate(0, -offsetY / ratio);
-
 		}
 
 		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
@@ -409,7 +432,7 @@ public class Painter extends JComponent implements Scrollable {
 	 */
 	@Override
 	public Dimension getPreferredSize() {
-		int width = computeSize() + 100;
+		int width = computeSize() + 50;
 		int height = links.isEmpty() ? 100 : links.size() * 50 + 40;
 
 		return new Dimension(width, height);
@@ -417,12 +440,12 @@ public class Painter extends JComponent implements Scrollable {
 
 	@Override
 	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return getHeight() / 40;
+		return getHeight() / 60;
 	}
 
 	@Override
 	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return getHeight() / 40;
+		return getHeight() / 120;
 	}
 
 	@Override

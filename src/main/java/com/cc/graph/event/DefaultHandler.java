@@ -135,8 +135,12 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 			else
 				painter.addSelection(element);
 		} else {
-			painter.setSelection(element);
+			if (element != null && element.isSelected()) {
+				painter.setSelection(null);
+			} else {
+				painter.setSelection(element);
+				painter.ensureLineVisible(element);
+			}
 		}
 	}
-
 }

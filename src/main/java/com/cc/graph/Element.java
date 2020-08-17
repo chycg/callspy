@@ -145,7 +145,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (id ^ id >>> 32);
+		result = prime * result + (id ^ id >>> 32);
 		return result;
 	}
 
@@ -160,6 +160,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		Element other = (Element) obj;
 		if (id != other.id)
 			return false;
+
 		return true;
 	}
 }

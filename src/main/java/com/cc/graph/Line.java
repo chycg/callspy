@@ -5,6 +5,8 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 
+import com.cc.tree.Mod;
+
 public class Line extends Element {
 
 	private static final long serialVersionUID = 1007906709323772156L;
@@ -17,6 +19,8 @@ public class Line extends Element {
 	private final Node to;
 
 	private int count = 1;
+
+	private int mod;
 
 	public Line(Node from, Node to, String method, int order) {
 		this(0, from, to, method, order);
@@ -41,6 +45,14 @@ public class Line extends Element {
 		return to;
 	}
 
+	public int getMod() {
+		return mod;
+	}
+
+	public void setMod(int mod) {
+		this.mod = mod;
+	}
+
 	public String getMethod() {
 		return count == 1 ? getText() : getText() + " *" + count;
 	}
@@ -62,7 +74,7 @@ public class Line extends Element {
 		String content = getOrder() + ": " + getMethod();
 
 		g2d.setStroke(new BasicStroke(isSelected() ? 2f : 1f));
-		g2d.setColor(isSelected() ? Color.blue : Color.black);
+		g2d.setColor(getLineColor());
 
 		if (from.getOrder() < to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
@@ -92,6 +104,18 @@ public class Line extends Element {
 			if (sx - tx > 800)
 				paintText(g2d, content, tx + 10, sy - 5);
 		}
+	}
+
+	protected Color getLineColor() {
+		if (isSelected())
+			return Color.red;
+
+		return Mod.getModByCode(mod).getColor();
+	}
+
+	@Override
+	protected Color getTextColor() {
+		return super.getTextColor();
 	}
 
 	@Override

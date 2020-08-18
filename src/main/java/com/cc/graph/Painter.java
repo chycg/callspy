@@ -298,7 +298,8 @@ public class Painter extends JComponent implements Scrollable {
 
 	public void removeLine(String className, String methodName, Invocation invocation) {
 		popupEvent = false;
-		Set<Line> lines = getAllLinks().stream()
+		List<Line> allLinks = getAllLinks();
+		Set<Line> lines = allLinks.stream()
 				.filter(e -> e.getTo().getText().endsWith(className) && e.getText().equals(methodName) && invocation == e.getUserObject())
 				.collect(Collectors.toSet());
 
@@ -308,7 +309,7 @@ public class Painter extends JComponent implements Scrollable {
 		popupEvent = true;
 	}
 
-	public Line addLine(String from, String to, String method, Object invocation) {
+	public Line addLine(String from, String to, String method, Invocation invocation) {
 		List<Element> targets = new ArrayList<>();
 		if (!nodes.containsKey(from)) {
 			Node fromNode = new Node(from, nodes.size(), this);
@@ -337,6 +338,8 @@ public class Painter extends JComponent implements Scrollable {
 
 		Line line = new Line(fromNode, toNode, method, links.size());
 		line.setUserObject(invocation);
+		line.setMod(invocation.getMod());
+
 		links.put(line.getId(), line);
 		targets.add(line);
 
@@ -358,11 +361,14 @@ public class Painter extends JComponent implements Scrollable {
 		}
 
 		int i = 1;
-		for (Line line : getAllLinks()) {
+		List<Line> allLinks = getAllLinks();
+		for (Line line : allLinks) {
 			line.setOrder(i++);
 			line.getFrom().addFromCount();
 			line.getTo().addToCount();
 		}
+
+		tmpNodes.removeIf(e -> e.getFromCount() == 0 && e.getToCount() == 0);
 
 		return offsetX;
 	}
@@ -397,7 +403,8 @@ public class Painter extends JComponent implements Scrollable {
 		}
 
 		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
-		for (Line line : getAllLinks()) {
+		List<Line> allLinks = getAllLinks();
+		for (Line line : allLinks) {
 			line.paint(g2d);
 		}
 	}
@@ -440,7 +447,14 @@ public class Painter extends JComponent implements Scrollable {
 	 */
 	@Override
 	public Dimension getPreferredSize() {
-		int width = computeSize() + 50;
+		List<Node> tmpNodes = nodes.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
+
+		int offsetX = 20;
+		for (Node node : tmpNodes) {
+			offsetX += node.getWidth() + 20;
+		}
+
+		int width = offsetX + 50;
 		int height = links.isEmpty() ? 100 : links.size() * 50 + 40;
 
 		return new Dimension(width, height);

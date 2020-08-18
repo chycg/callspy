@@ -99,6 +99,8 @@ public class Node extends Element {
 		int h2 = getHeight();
 
 		g2d.drawRect(x, y, w, h2 + 2);
+		g2d.setColor(new Color(240, 220, 150));
+		g2d.fillRect(x + 1, y + 1, w - 2, h2);
 		paintText(g2d, getText(), x + Node.gap, y + Node.gap + g2d.getFontMetrics().getAscent());
 
 		if (isSelected()) { // print border

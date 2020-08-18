@@ -14,6 +14,7 @@ public class TraceAdvisor {
 	@Advice.OnMethodEnter
 	public static void onMethodEnter(@Advice.Origin Method method, @Advice.AllArguments Object[] arguments) {
 		Class<?> clz = method.getDeclaringClass();
+		int mod = method.getModifiers();
 		String methodName = method.getName();
 		String currentMethod = clz.getName() + "." + methodName;
 
@@ -21,7 +22,7 @@ public class TraceAdvisor {
 
 		if (config.needTrace(method)) {
 			if (config.isShowEntry()) {
-				Stack.push(currentMethod, args);
+				Stack.push(mod, currentMethod, args);
 			} else {
 				Stack.push();
 			}
@@ -31,6 +32,7 @@ public class TraceAdvisor {
 	@Advice.OnMethodExit
 	public static void onMethodExit(@Advice.Origin Method method, @Advice.AllArguments Object[] arguments, @Advice.Return Object ret) {
 		if (config.needTrace(method)) {
+			int mod = method.getModifiers();
 			String methodName = method.getName();
 			String currentMethod = method.getDeclaringClass().getName() + "." + methodName;
 			Object[] args = config.isShowMethodInfo() ? method.getParameterTypes() : arguments;
@@ -40,9 +42,9 @@ public class TraceAdvisor {
 
 			if (hasLoop) {
 				config.addLoopMethod(methodName);
-				Stack.loopLog(currentMethod, args, resultValue);
+				Stack.loopLog(mod, currentMethod, args, resultValue);
 			} else {
-				Stack.log(currentMethod, args, resultValue);
+				Stack.log(mod, currentMethod, args, resultValue);
 			}
 
 			Stack.pop();

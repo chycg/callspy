@@ -25,11 +25,11 @@ public class Stack {
 		trace.push();
 	}
 
-	public static void push(String method, Object[] args) {
+	public static void push(int mod, String method, Object[] args) {
 		push();
 
 		if (config.isShowEntry())
-			log(method, args);
+			log(mod, method, args);
 	}
 
 	public static int getDepth() {
@@ -65,20 +65,20 @@ public class Stack {
 		return map.get(Thread.currentThread().getId());
 	}
 
-	public static void log(String string) {
+	public static void log(int mod, String string) {
 		Trace trace = getTrace();
-		trace.write(string);
+		trace.write(mod, string);
 
 		if (config.isShowConsoleLog())
-			System.out.println(trace.getInitIndent() + string);
+			System.out.println(trace.getPrefix(mod) + string);
 	}
 
-	public static void log(String method, Object[] args) {
-		log(method + "(" + Utils.getArgs(args) + ")");
+	public static void log(int mod, String method, Object[] args) {
+		log(mod, method + "(" + Utils.getArgs(args) + ")");
 	}
 
-	public static void log(String method, Object[] args, Object returnValue) {
-		log(method + "(" + Utils.getArgs(args) + ") -> " + Utils.toString(returnValue));
+	public static void log(int mod, String method, Object[] args, Object returnValue) {
+		log(mod, method + "(" + Utils.getArgs(args) + ") -> " + Utils.toString(returnValue));
 	}
 
 	/**
@@ -88,13 +88,13 @@ public class Stack {
 	 * @param args
 	 * @param returnValue
 	 */
-	public static void loopLog(String method, Object[] args, Object returnValue) {
+	public static void loopLog(int mod, String method, Object[] args, Object returnValue) {
 		if (returnValue == null)
 			returnValue = "null";
 		else
 			returnValue = "<" + returnValue.getClass().getSimpleName() + ">";
 
 		args = Utils.getArgTypes(args);
-		log(method, args, returnValue);
+		log(mod, method, args, returnValue);
 	}
 }

@@ -48,13 +48,18 @@ public abstract class Element implements Serializable, Comparable<Element> {
 			g2d.fillRect(x, y - g2d.getFontMetrics().getAscent() - 1, w, h - 1);
 
 			g2d.setColor(isSelected() ? Color.green.darker() : Color.red);
-		} else if (isSelected()) {
-			g2d.setColor(Color.red);
 		} else {
-			g2d.setColor(Color.black);
+			g2d.setColor(getTextColor());
 		}
 
 		g2d.drawString(text, x, y);
+	}
+
+	protected Color getTextColor() {
+		if (isSelected())
+			return Color.red;
+
+		return Color.black;
 	}
 
 	public boolean isNode() {

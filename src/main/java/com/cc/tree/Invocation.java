@@ -8,21 +8,21 @@ public class Invocation implements Serializable {
 
 	private static final long serialVersionUID = 3358434219949751004L;
 
+	private final int count;
+
+	private final int mod;
+
+	private final String method; // 完整路径
+
 	private String line;
-
-	private int count;
-
-	/**
-	 * 完整路径：package.class.method
-	 */
-	private String method;
 
 	private String result;
 
-	public Invocation(String line, int count) {
+	public Invocation(String line, int count,int mod) {
 		this.line = line.trim();
 		this.count = count;
 		this.method = line.substring(0, line.indexOf("("));
+		this.mod = mod;
 	}
 
 	public String getMethod() {
@@ -63,6 +63,10 @@ public class Invocation implements Serializable {
 
 	public int getCount() {
 		return count;
+	}
+
+	public int getMod() {
+		return mod;
 	}
 
 	public boolean isResult(String line) {

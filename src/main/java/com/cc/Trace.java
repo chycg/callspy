@@ -3,6 +3,7 @@ package com.cc;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -54,8 +55,9 @@ public class Trace {
 		initIndent = initIndent.substring(indent.length());
 	}
 
-	public void write(String str) {
-		String line = initIndent + str;
+	public void write(int mod, String str) {
+		String prefix = getPrefix(mod);
+		String line = prefix + str;
 
 		try {
 			bw.append(line + "\n");
@@ -69,8 +71,23 @@ public class Trace {
 		return initIndent.length();
 	}
 
-	public String getInitIndent() {
-		return initIndent;
+	/**
+	 * change when output line
+	 * 
+	 * @param mod
+	 * @return
+	 */
+	public String getPrefix(int mod) {
+		String prefix = initIndent;
+		if (mod == 0) {
+			prefix = prefix.replace('~', ' ');
+		} else if (Modifier.isPublic(mod)) {
+			prefix = prefix.replace('~', '+');
+		} else if (Modifier.isPrivate(mod)) {
+			prefix = prefix.replace('~', '-');
+		}
+
+		return prefix;
 	}
 
 	@Override

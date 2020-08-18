@@ -25,6 +25,8 @@ public class TraceInterceptor {
 	@RuntimeType
 	public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable, @AllArguments Object[] arguments) throws Exception {
 		Class<?> clz = method.getDeclaringClass();
+		int mod = method.isDefault() ? 0 : method.getModifiers();
+
 		String methodName = method.getName();
 		String currentMethod = clz.getName() + "." + methodName;
 		Object[] args = config.isShowMethodInfo() ? method.getParameterTypes() : arguments;
@@ -46,7 +48,7 @@ public class TraceInterceptor {
 		showStatus.get().put(level, needTrace);
 
 		if (needTrace) {
-			Stack.push(currentMethod, args);
+			Stack.push(mod, currentMethod, args);
 		}
 
 		Object result = null;
@@ -59,9 +61,9 @@ public class TraceInterceptor {
 
 				if (hasLoop) {
 					config.addLoopMethod(methodName);
-					Stack.loopLog(currentMethod, args, resultValue);
+					Stack.loopLog(mod, currentMethod, args, resultValue);
 				} else {
-					Stack.log(currentMethod, args, resultValue);
+					Stack.log(mod, currentMethod, args, resultValue);
 				}
 
 				Stack.pop();

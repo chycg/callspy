@@ -45,6 +45,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
+import com.cc.Utils;
 import com.cc.graph.Element;
 import com.cc.graph.Painter;
 import com.cc.graph.event.DataChangeEvent;
@@ -55,8 +56,6 @@ public class MainFrame extends JFrame {
 	private static final long serialVersionUID = -1266662931999876034L;
 
 	private String path = "";
-	private final String spaceChar = "~";
-
 	private DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
 	private DefaultTreeModel model = new DefaultTreeModel(root);
 
@@ -539,9 +538,9 @@ public class MainFrame extends JFrame {
 			return;
 
 		Invocation source = (Invocation) parentNode.getUserObject();
-		String className = source.getClassName();
+		String srcClzName = source.getClassName();
 		Invocation invoke = (Invocation) node.getUserObject();
-		painter.addLine(className, invoke.getClassName(), invoke.getMethodName(), invoke);
+		painter.addLine(srcClzName, invoke.getClassName(), invoke.getMethodName(), invoke);
 	}
 
 	private void deleteNode(DefaultMutableTreeNode node) {
@@ -575,7 +574,7 @@ public class MainFrame extends JFrame {
 					int row = 1;
 					for (int i = 2; i < list.size(); i++) {
 						String e = list.get(i);
-						if (!e.startsWith(spaceChar))
+						if (!isPrefix(e))
 							continue;
 
 						line += e;
@@ -583,7 +582,7 @@ public class MainFrame extends JFrame {
 						int k = i + 1;
 						while (k < list.size()) {
 							String nextLine = list.get(k);
-							if (nextLine.startsWith(spaceChar))
+							if (isPrefix(nextLine))
 								break;
 
 							line += nextLine;
@@ -608,6 +607,7 @@ public class MainFrame extends JFrame {
 	private void addNode(String line, int row) {
 		int count = countSpace(line);
 		int index = line.indexOf("->");
+		int mod = Mod.getModByChar(line.charAt(0)).getCode();
 
 		String result = null;
 		if (index > 0) { // 结果行，取结果
@@ -620,7 +620,7 @@ public class MainFrame extends JFrame {
 		if (result != null)
 			line += result;
 
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Invocation(line, count));
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Invocation(line, count, mod));
 
 		if (count < lastCount) {
 			parentNode = (DefaultMutableTreeNode) parentNode.getParent();
@@ -651,10 +651,10 @@ public class MainFrame extends JFrame {
 	}
 
 	private int countSpace(String line) {
-		if (!line.startsWith(spaceChar))
+		if (!isPrefix(line))
 			return -1;
 
-		char char0 = spaceChar.charAt(0);
+		char char0 = line.charAt(0);
 		for (int i = 0; i < line.length(); i++) {
 			if (line.charAt(i) == char0)
 				continue;
@@ -663,5 +663,13 @@ public class MainFrame extends JFrame {
 		}
 
 		return 0;
+	}
+
+	private boolean isPrefix(String line) {
+		if (line.isEmpty())
+			return false;
+
+		char c0 = line.charAt(0);
+		return Utils.isContain(c0, '+', '-', ' ', '~');
 	}
 }

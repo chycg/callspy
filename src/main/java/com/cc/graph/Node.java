@@ -14,7 +14,8 @@ public class Node extends Element {
 
 	public static final int height = 20;
 
-	private static final BasicStroke selectedStroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 4, 8 }, 0f);
+	private static final BasicStroke selectedStroke = new BasicStroke(1.3f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 5, 8 },
+			0f);
 
 	private int width;
 

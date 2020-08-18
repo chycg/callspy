@@ -207,6 +207,9 @@ public class Painter extends JComponent implements Scrollable {
 		if (rect.y >= offsetY - 10)
 			rect.y = rect.y + 50;
 
+		rect.x = node.getCenterX() - node.getWidth();
+		rect.width = node.getWidth() * 2;
+
 		scrollRectToVisible(rect);
 	}
 

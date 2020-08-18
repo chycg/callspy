@@ -191,10 +191,18 @@ public class Painter extends JComponent implements Scrollable {
 		if (node.getFromCount() == 0 && node.getToCount() == 0)
 			return;
 
-		Line line = getAllLinks().stream().filter(e -> e.getFrom() == node || e.getTo() == node).findFirst().orElse(null);
-		Rectangle rect = line.getBounds();
-
+		List<Line> relatedList = getAllLinks().stream().filter(e -> e.getFrom() == node || e.getTo() == node).collect(Collectors.toList());
 		Rectangle viewRect = getViewRect();
+		float minY = viewRect.y / ratio;
+		float maxY = (viewRect.y + viewRect.height) / ratio;
+		for (Line e : relatedList) {
+			Rectangle bounds = e.getBounds();
+			if (minY < bounds.y && bounds.y < maxY)
+				return;
+		}
+
+		Line line = relatedList.get(0);
+		Rectangle rect = line.getBounds();
 		int offsetY = (int) ((viewRect.y + viewRect.height - 40) / ratio);
 		if (rect.y >= offsetY - 10)
 			rect.y = rect.y + 50;

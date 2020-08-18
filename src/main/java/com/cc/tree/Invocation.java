@@ -102,5 +102,4 @@ public class Invocation implements Serializable {
 	public String toString() {
 		return line;
 	}
-
 }

@@ -5,13 +5,13 @@ import java.util.stream.Stream;
 
 public enum Mod {
 
-	DEFAULT(0, ' ', Color.magenta),
+	PUBLIC(1, '+', Color.black),
 
-	PUBLIC(1, '+', Color.blue),
+	PROTECTED(2, '-', Color.green.darker()),
 
-	PRIVATE(2, '-', Color.darkGray),
+	DEFAULT(3, '~', Color.blue),
 
-	PROTECTED(4, '~', Color.cyan.darker());
+	PRIVATE(4, '*', Color.magenta);
 
 	private final int code;
 
@@ -43,6 +43,10 @@ public enum Mod {
 
 	public Color getColor() {
 		return color;
+	}
+
+	public static boolean isModSign(char c) {
+		return Stream.of(Mod.values()).anyMatch(e -> e.sign == c);
 	}
 
 }

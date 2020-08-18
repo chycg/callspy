@@ -666,10 +666,6 @@ public class MainFrame extends JFrame {
 	}
 
 	private boolean isPrefix(String line) {
-		if (line.isEmpty())
-			return false;
-
-		char c0 = line.charAt(0);
-		return Utils.isContain(c0, '+', '-', ' ', '~');
+		return Utils.isNotEmpty(line) && Mod.isModSign(line.charAt(0));
 	}
 }

@@ -79,12 +79,13 @@ public class Trace {
 	 */
 	public String getPrefix(int mod) {
 		String prefix = initIndent;
-		if (mod == 0) {
-			prefix = prefix.replace('~', ' ');
-		} else if (Modifier.isPublic(mod)) {
+
+		if (Modifier.isPublic(mod)) {
 			prefix = prefix.replace('~', '+');
-		} else if (Modifier.isPrivate(mod)) {
+		} else if (Modifier.isProtected(mod)) {
 			prefix = prefix.replace('~', '-');
+		} else if (Modifier.isPrivate(mod)) {
+			prefix = prefix.replace('~', '*');
 		}
 
 		return prefix;

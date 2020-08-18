@@ -47,9 +47,9 @@ import javax.swing.tree.TreePath;
 
 import com.cc.Utils;
 import com.cc.graph.Element;
+import com.cc.graph.Line;
 import com.cc.graph.Painter;
 import com.cc.graph.event.DataChangeEvent;
-import com.cc.graph.event.DataChangeListener;
 
 public class MainFrame extends JFrame {
 
@@ -428,6 +428,24 @@ public class MainFrame extends JFrame {
 			taDetail.setText("<font size='5' face='Courier New'>" + tagLine + "</font>");
 		});
 
+		painter.addSelectionListener(e -> {
+			Collection<? extends Element> targets = e.getElements();
+			Element target = null;
+			if (targets.size() > 0) {
+				target = targets.iterator().next();
+			}
+
+			if (target == null)
+				return;
+
+			if (target.isNode())
+				tfSelection.setText(target.getText());
+			else if (target.isLine()) {
+				Line line = (Line) target;
+				tfSelection.setText(line.getFrom().getText() + " -> " + line.getTo().getText() + "." + line.getText() + "()");
+			}
+		});
+
 		tree.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
@@ -460,21 +478,17 @@ public class MainFrame extends JFrame {
 		tfSelection.setEditable(false);
 		taDetail.setComponentPopupMenu(popupMenu);
 
-		painter.addDataChangeListener(new DataChangeListener() {
-
-			@Override
-			public void dataChanged(DataChangeEvent e) {
-				int type = e.getEventType();
-				if (type == DataChangeEvent.REMOVE) {
-					Collection<? extends Element> targets = e.getElements();
-					for (Element c : targets) {
-						if (c.isNode()) {
-							ActionEvent event = new ActionEvent(c.getText(), c.getId(), "deleteClass");
-							removeClassAction.actionPerformed(event);
-						} else if (c.isLine()) {
-							ActionEvent event = new ActionEvent(c.getText(), c.getId(), "deleteMethod");
-							removeMethodAction.actionPerformed(event);
-						}
+		painter.addDataChangeListener(e -> {
+			int type = e.getEventType();
+			if (type == DataChangeEvent.REMOVE) {
+				Collection<? extends Element> targets = e.getElements();
+				for (Element c : targets) {
+					if (c.isNode()) {
+						ActionEvent event1 = new ActionEvent(c.getText(), c.getId(), "deleteClass");
+						removeClassAction.actionPerformed(event1);
+					} else if (c.isLine()) {
+						ActionEvent event2 = new ActionEvent(c.getText(), c.getId(), "deleteMethod");
+						removeMethodAction.actionPerformed(event2);
 					}
 				}
 			}
@@ -559,7 +573,7 @@ public class MainFrame extends JFrame {
 		new SwingWorker<Object, Object>() {
 
 			@Override
-			protected Object doInBackground() throws Exception {
+			protected Object doInBackground() {
 				File file = new File(path);
 				if (!file.exists()) {
 					System.out.println(path + " not exists");

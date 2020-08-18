@@ -184,7 +184,7 @@ public class Painter extends JComponent implements Scrollable {
 	public void ensureVisible(Element target) {
 		Rectangle rect = target.getBounds();
 		Rectangle viewRect = getViewRect();
-		if (viewRect.getHeight() - rect.y < 100)
+		if (viewRect.y + viewRect.getHeight() - rect.y < 100)
 			rect.height += 100;
 
 		scrollRectToVisible(rect);
@@ -216,8 +216,11 @@ public class Painter extends JComponent implements Scrollable {
 		Line line = relatedList.get(0);
 		Rectangle rect = line.getBounds();
 		int offsetY = (int) ((viewRect.y + viewRect.height - 40) / ratio);
-		if (rect.y >= offsetY - 10)
-			rect.y = rect.y + 50;
+		if (rect.y >= offsetY - 20)
+			rect.y += 200;
+
+		if (rect.y < minY + Node.height + gap)
+			rect.y -= 100;
 
 		rect.x = node.getCenterX() - node.getWidth();
 		rect.width = node.getWidth() * 2;
@@ -363,17 +366,10 @@ public class Painter extends JComponent implements Scrollable {
 		return line;
 	}
 
-	private int computeSize() {
+	private int computeSize(Graphics2D g2d) {
 		tmpNodes.clear();
 		tmpNodes = nodes.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
-
-		Graphics2D g2d = (Graphics2D) getGraphics();
-		int offsetX = 20;
-		for (Node node : tmpNodes) {
-			node.setX(offsetX);
-			node.resetCounts();
-			offsetX += node.getWidth(g2d) + 20;
-		}
+		tmpNodes.forEach(e -> e.resetCounts());
 
 		int i = 1;
 		List<Line> allLinks = getAllLinks();
@@ -384,42 +380,69 @@ public class Painter extends JComponent implements Scrollable {
 		}
 
 		tmpNodes.removeIf(e -> e.getFromCount() == 0 && e.getToCount() == 0);
+		int offsetX = 20;
+		for (Node node : tmpNodes) {
+			node.setX(offsetX);
+			offsetX += node.getWidth(g2d) + 20;
+		}
 
 		return offsetX;
 	}
 
 	@Override
 	protected void paintComponent(Graphics g) {
-		computeSize();
 		Graphics2D g2d = (Graphics2D) g.create();
 		g2d.clearRect(0, 0, getWidth(), getHeight());
+
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.transform(AffineTransform.getScaleInstance(ratio, ratio));
-
 		g2d.setColor(Color.black);
-		Rectangle rect = getViewRect();
-		int offsetY = rect.y + rect.height - 40;
-		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
 
+		computeSize(g2d);
+		Rectangle rect = getViewRect();
+
+		int top = (int) (rect.y / ratio);
+		int bottom = (int) ((rect.y + rect.height - 40) / ratio);
+		int left = (int) (rect.x / ratio);
+		int right = (int) ((rect.x + rect.width - 40) / ratio);
+
+		int fontHeight = g2d.getFontMetrics().getAscent() + g2d.getFontMetrics().getDescent();
+
+		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
 		for (Node node : tmpNodes) {
+			if (node.getX() + node.getWidth() < left)
+				continue;
+
+			if (node.getX() > right)
+				break;
+
+			g2d.translate(0, top);
 			node.paint(g2d);
+			g2d.translate(0, -top);
+
 			g2d.setStroke(stroke);
 			g2d.setColor(node.isSelected() ? Color.black : Color.lightGray);
-			g2d.drawLine(node.getCenterX(), 10 + node.getHeight(), node.getCenterX(), getHeight());
+			g2d.drawLine(node.getCenterX(), top + gap + node.getHeight(), node.getCenterX(), bottom + gap);
 
 			g2d.setColor(Color.cyan.darker());
 			int counterY = (int) ((rect.y + rect.height / 2) / ratio) / 50 * 50;
-			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - 18);
+			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - fontHeight);
 
 			// bottom class
-			g2d.translate(0, offsetY / ratio);
+			g2d.translate(0, bottom);
 			node.paint(g2d);
-			g2d.translate(0, -offsetY / ratio);
+			g2d.translate(0, -bottom);
 		}
 
 		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
 		List<Line> allLinks = getAllLinks();
 		for (Line line : allLinks) {
+			if (line.getY() < top + Node.height + gap + fontHeight - 1)
+				continue;
+
+			if (line.getY() >= bottom - Node.height)
+				break;
+
 			line.paint(g2d);
 		}
 	}
@@ -477,7 +500,7 @@ public class Painter extends JComponent implements Scrollable {
 			offsetX += node.getWidth() + 20;
 		}
 
-		int width = offsetX + 50;
+		int width = offsetX;
 		int height = links.isEmpty() ? 100 : links.size() * 50 + 40;
 
 		return new Dimension(width, height);

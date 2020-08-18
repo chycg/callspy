@@ -64,6 +64,10 @@ public class Line extends Element {
 		count++;
 	}
 
+	public int getY() {
+		return getOrder() * 50;
+	}
+
 	@Override
 	public void paint(Graphics2D g2d) {
 		Node from = getFrom();
@@ -73,7 +77,7 @@ public class Line extends Element {
 
 		int sx = from.getCenterX();
 		int tx = to.getCenterX();
-		int sy = getOrder() * 50;
+		int sy = getY();
 		String content = getOrder() + ": " + getMethod();
 
 		g2d.setStroke(new BasicStroke(isSelected() ? 2f : 1f));
@@ -124,7 +128,7 @@ public class Line extends Element {
 
 		if (from == to) {
 			int sx = from.getCenterX();
-			int sy = getOrder() * 50;
+			int sy = getY();
 
 			return new Rectangle(sx, sy - 20, textWidth, rectH).contains(p);
 		}
@@ -136,13 +140,13 @@ public class Line extends Element {
 	public Rectangle getBounds() {
 		if (from == to) {
 			int sx = from.getCenterX();
-			int sy = getOrder() * 50;
+			int sy = getY();
 
 			return new Rectangle(sx, sy, rectW, rectH);
 		}
 
 		int x = Math.min(from.getCenterX(), to.getCenterX());
-		int y = getOrder() * 50;
+		int y = getY();
 		int width = Math.abs(from.getCenterX() - to.getCenterX());
 
 		return new Rectangle(x - 2, y - 30, width + 4, 40);

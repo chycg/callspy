@@ -14,9 +14,6 @@ public class Node extends Element {
 
 	public static final int height = 20;
 
-	private static final BasicStroke selectedStroke = new BasicStroke(1.3f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 1f, new float[] { 5, 8 },
-			0f);
-
 	private int width;
 
 	private int x;
@@ -104,11 +101,11 @@ public class Node extends Element {
 		g2d.fillRect(x + 1, gap + 1, w - 2, h2);
 		paintText(g2d, getText(), x + Node.gap, gap + Node.gap + g2d.getFontMetrics().getAscent());
 
-		if (isSelected()) { // print border
-			g2d.setColor(Color.blue);
-			g2d.setStroke(selectedStroke);
-			g2d.drawRect(x - 2, gap - 2, w + 4, parent.getHeight() - gap);
-		}
+		// if (isSelected()) { // print border
+		// g2d.setColor(Color.blue);
+		// g2d.setStroke(selectedStroke);
+		// g2d.drawRect(x - 2, gap - 2, w + 4, parent.getHeight() - gap);
+		// }
 	}
 
 	@Override

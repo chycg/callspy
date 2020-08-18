@@ -15,7 +15,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 	private final int id;
 
-	private final Painter parent;
+	protected final Painter parent;
 
 	private final String text;
 
@@ -47,7 +47,7 @@ public abstract class Element implements Serializable, Comparable<Element> {
 			g2d.setColor(Color.yellow);
 			g2d.fillRect(x, y - g2d.getFontMetrics().getAscent() - 1, w, h - 1);
 
-			g2d.setColor(isSelected() ? Color.green.darker() : Color.red);
+			g2d.setColor(isSelected() ? Color.red : Color.green.darker());
 		} else {
 			g2d.setColor(getTextColor());
 		}

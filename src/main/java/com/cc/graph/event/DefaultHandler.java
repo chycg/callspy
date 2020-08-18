@@ -139,7 +139,12 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				painter.setSelection(null);
 			} else {
 				painter.setSelection(element);
-				painter.ensureLineVisible(element);
+				boolean onlyNode = element.isNode() && ((Node) element).isNodeRange(e.getPoint());
+				if (onlyNode) {
+					painter.ensureVisible(element);
+				} else {
+					painter.ensureLineVisible(element);
+				}
 			}
 		}
 	}

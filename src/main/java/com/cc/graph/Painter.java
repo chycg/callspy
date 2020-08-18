@@ -58,6 +58,8 @@ public class Painter extends JComponent implements Scrollable {
 
 	private boolean popupEvent = true;
 
+	private int gap = 10;
+
 	public Painter() {
 		setFocusable(true);
 		setFont(new Font("微软雅黑", Font.BOLD, 15));
@@ -113,11 +115,17 @@ public class Painter extends JComponent implements Scrollable {
 
 	public Element getElementByLocation(Point p) {
 		Point2D p2 = new Point2D.Float(p.x / ratio, p.y / ratio);
-		Element target = getAllLinks().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		List<Node> allNodes = getAllNodes();
+
+		Element target = allNodes.stream().filter(e -> e.isNodeRange(p2)).findFirst().orElse(null);
 		if (target != null)
 			return target;
 
-		target = getAllNodes().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		target = getAllLinks().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		if (target != null)
+			return target;
+
+		target = allNodes.stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
 		return target;
 	}
 
@@ -158,11 +166,15 @@ public class Painter extends JComponent implements Scrollable {
 			selection.add(e);
 		}
 
-		fireSelectionChangeEvent(SelectionEvent.SET_SELETION, Arrays.asList(e));
+		List<Element> list = new ArrayList<>();
+		if (e != null)
+			list.add(e);
+
+		fireSelectionChangeEvent(SelectionEvent.SET_SELETION, list);
 		repaint();
 	}
 
-	private Rectangle getViewRect() {
+	protected Rectangle getViewRect() {
 		return ((JViewport) getParent()).getViewRect();
 	}
 
@@ -443,6 +455,14 @@ public class Painter extends JComponent implements Scrollable {
 
 	public void setRatio(float ratio) {
 		this.ratio = ratio;
+	}
+
+	public int getGap() {
+		return gap;
+	}
+
+	public void setGap(int gap) {
+		this.gap = gap;
 	}
 
 	/**

@@ -1,4 +1,4 @@
-package com.demo;
+package com.demo.fx;
 
 import com.cc.tree.Invocation;
 

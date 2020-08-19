@@ -72,8 +72,8 @@ public class LocalUtils {
 			matchedElements.clear();
 
 			String text2 = text.trim();
-			matchedElements.addAll(painter.getAllNodes().stream().filter(e -> e.getText().contains(text2)).collect(Collectors.toList()));
-			matchedElements.addAll(painter.getAllLinks().stream().filter(e -> e.getText().contains(text2)).collect(Collectors.toList()));
+			matchedElements.addAll(painter.getAllNodes().stream().filter(e -> e.getName().contains(text2)).collect(Collectors.toList()));
+			matchedElements.addAll(painter.getAllLinks().stream().filter(e -> e.getName().contains(text2)).collect(Collectors.toList()));
 
 			lastText = text2;
 		}

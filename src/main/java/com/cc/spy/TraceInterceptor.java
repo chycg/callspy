@@ -7,7 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.cc.Config;
-import com.cc.Stack;
+import com.cc.InvokeStack;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
@@ -43,12 +43,12 @@ public class TraceInterceptor {
 		final int level = currentLevel.get().get();
 		showStatus.get().put(level, true);
 
-		Boolean parentShow = showStatus.get().getOrDefault(level - 1, true);
-		boolean needTrace = parentShow && config.needTrace(method);
+		Boolean parentShow = showStatus.get().getOrDefault(level - 1, true); // 上层是否显示
+		boolean needTrace = parentShow && config.needTrace(method); // 若上层屏蔽了，本层继续屏蔽
 		showStatus.get().put(level, needTrace);
 
 		if (needTrace) {
-			Stack.push(mod, currentMethod, args);
+			InvokeStack.push(mod, currentMethod, args);
 		}
 
 		Object result = null;
@@ -57,16 +57,16 @@ public class TraceInterceptor {
 		} finally {
 			if (needTrace) {
 				Object resultValue = method.getReturnType() == void.class ? "void" : result;
-				boolean hasLoop = Stack.hasLoop();
+				boolean hasLoop = InvokeStack.hasLoop();
 
 				if (hasLoop) {
 					config.addLoopMethod(methodName);
-					Stack.loopLog(mod, currentMethod, args, resultValue);
+					InvokeStack.loopLog(mod, currentMethod, args, resultValue);
 				} else {
-					Stack.log(mod, currentMethod, args, resultValue);
+					InvokeStack.log(mod, currentMethod, args, resultValue);
 				}
 
-				Stack.pop();
+				InvokeStack.pop();
 			}
 
 			showStatus.get().remove(level);

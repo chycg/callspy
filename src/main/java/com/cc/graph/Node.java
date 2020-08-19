@@ -37,7 +37,7 @@ public class Node extends Element {
 
 	public int getWidth(Graphics2D g) {
 		if (width < 1) {
-			width = g.getFontMetrics().stringWidth(getText()) + gap * 2;
+			width = g.getFontMetrics().stringWidth(getName()) + gap * 2;
 		}
 
 		return width;
@@ -99,13 +99,7 @@ public class Node extends Element {
 		g2d.drawRect(x, gap, w, h2 + 2);
 		g2d.setColor(new Color(240, 220, 150));
 		g2d.fillRect(x + 1, gap + 1, w - 2, h2);
-		paintText(g2d, getText(), x + Node.gap, gap + Node.gap + g2d.getFontMetrics().getAscent());
-
-		// if (isSelected()) { // print border
-		// g2d.setColor(Color.blue);
-		// g2d.setStroke(selectedStroke);
-		// g2d.drawRect(x - 2, gap - 2, w + 4, parent.getHeight() - gap);
-		// }
+		paintText(g2d, getName(), x + Node.gap, gap + Node.gap + g2d.getFontMetrics().getAscent());
 	}
 
 	@Override

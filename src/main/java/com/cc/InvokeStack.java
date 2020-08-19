@@ -3,14 +3,14 @@ package com.cc;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class Stack {
+public class InvokeStack {
 
 	private static Config config;
 
 	private static Map<Long, Trace> map = new ConcurrentHashMap<>();
 
 	public static void init(Config config) {
-		Stack.config = config;
+		InvokeStack.config = config;
 	}
 
 	public static void push() {

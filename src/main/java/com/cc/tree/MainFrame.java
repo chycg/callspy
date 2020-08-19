@@ -439,10 +439,10 @@ public class MainFrame extends JFrame {
 				return;
 
 			if (target.isNode())
-				tfSelection.setText(target.getText());
+				tfSelection.setText(target.getName());
 			else if (target.isLine()) {
 				Line line = (Line) target;
-				tfSelection.setText(line.getFrom().getText() + " -> " + line.getTo().getText() + "." + line.getText() + "()");
+				tfSelection.setText(line.getFrom().getName() + " -> " + line.getTo().getName() + "." + line.getName() + "()");
 			}
 		});
 
@@ -484,10 +484,10 @@ public class MainFrame extends JFrame {
 				Collection<? extends Element> targets = e.getElements();
 				for (Element c : targets) {
 					if (c.isNode()) {
-						ActionEvent event1 = new ActionEvent(c.getText(), c.getId(), "deleteClass");
+						ActionEvent event1 = new ActionEvent(c.getName(), c.getId(), "deleteClass");
 						removeClassAction.actionPerformed(event1);
 					} else if (c.isLine()) {
-						ActionEvent event2 = new ActionEvent(c.getText(), c.getId(), "deleteMethod");
+						ActionEvent event2 = new ActionEvent(c.getName(), c.getId(), "deleteMethod");
 						removeMethodAction.actionPerformed(event2);
 					}
 				}
@@ -652,7 +652,7 @@ public class MainFrame extends JFrame {
 			parentNode = node;
 		} else {
 			Invocation data = (Invocation) parentNode.getUserObject();
-			if (count == lastCount && data.isResult(line)) {
+			if (count == lastCount && data.isResult(line)) { // 同级别的退出记录，作为结果计入当前节点
 				data.setResultLine(line);
 			} else {
 				DefaultMutableTreeNode pp = (DefaultMutableTreeNode) parentNode.getParent();

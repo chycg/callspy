@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
@@ -42,9 +42,7 @@ public class Painter extends JComponent implements Scrollable {
 
 	private Map<String, Node> nodes = new HashMap<>();
 
-	private List<Node> tmpNodes = new ArrayList<>();
-
-	private TreeMap<Integer, Line> links = new TreeMap<>();
+	private Map<Integer, Line> links = new ConcurrentHashMap<>();
 
 	private float ratio = 1;
 
@@ -59,6 +57,10 @@ public class Painter extends JComponent implements Scrollable {
 	private boolean popupEvent = true;
 
 	private int gap = 10;
+
+	private UIData data;
+
+	private Line lastLine;
 
 	public Painter() {
 		setFocusable(true);
@@ -253,11 +255,11 @@ public class Painter extends JComponent implements Scrollable {
 
 		selection.remove(element);
 		if (element.isNode()) {
-			String className = element.getText();
+			String className = element.getName();
 			nodes.remove(className);
 
 			Set<Line> relatedLines = links.values().stream()
-					.filter(e -> e.getFrom().getText().equals(className) || e.getTo().getText().equals(className)).collect(Collectors.toSet());
+					.filter(e -> e.getFrom().getName().equals(className) || e.getTo().getName().equals(className)).collect(Collectors.toSet());
 
 			links.values().removeAll(relatedLines);
 			selection.removeAll(relatedLines);
@@ -267,13 +269,13 @@ public class Painter extends JComponent implements Scrollable {
 			Line line = (Line) element;
 			links.remove(line.getId());
 
-			String text = line.getText();
+			String text = line.getName();
 			Node from = line.getFrom();
 			Set<Line> sameInvocations = new HashSet<>();
 
 			// 删除同类下的同名方法
 			links.values().removeIf(e -> {
-				if (e.getFrom() == from && e.getText().equals(text)) {
+				if (e.getFrom() == from && e.getName().equals(text)) {
 					selection.remove(e);
 					sameInvocations.add(e);
 					return true;
@@ -318,7 +320,7 @@ public class Painter extends JComponent implements Scrollable {
 		popupEvent = false;
 		List<Line> allLinks = getAllLinks();
 		Set<Line> lines = allLinks.stream()
-				.filter(e -> e.getTo().getText().endsWith(className) && e.getText().equals(methodName) && invocation == e.getUserObject())
+				.filter(e -> e.getTo().getName().endsWith(className) && e.getName().equals(methodName) && invocation == e.getInvoke())
 				.collect(Collectors.toSet());
 
 		if (lines.size() > 0)
@@ -347,46 +349,32 @@ public class Painter extends JComponent implements Scrollable {
 		Node toNode = nodes.get(to);
 
 		if (links.size() > 1) {
-			Line last = links.lastEntry().getValue();
-			if (last.getFrom() == fromNode && last.getTo() == toNode && last.getText().equals(method)) {
-				last.addCount();
-				return last;
+			if (lastLine.getFrom() == fromNode && lastLine.getTo() == toNode && lastLine.getName().equals(method)) {
+				lastLine.addRepeatCount();
+				return lastLine;
 			}
 		}
 
-		Line line = new Line(fromNode, toNode, method, links.size());
-		line.setUserObject(invocation);
-		line.setMod(invocation.getMod());
+		lastLine = new Line(fromNode, toNode, method, links.size());
+		lastLine.setInvoke(invocation);
+		lastLine.setMod(invocation.getMod());
 
-		links.put(line.getId(), line);
-		targets.add(line);
+		links.put(lastLine.getId(), lastLine);
+		targets.add(lastLine);
 
 		fireDataChangeEvent(DataChangeEvent.ADD, targets);
 
-		return line;
+		return lastLine;
 	}
 
-	private int computeSize(Graphics2D g2d) {
-		tmpNodes.clear();
-		tmpNodes = nodes.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
-		tmpNodes.forEach(e -> e.resetCounts());
-
-		int i = 1;
-		List<Line> allLinks = getAllLinks();
-		for (Line line : allLinks) {
-			line.setOrder(i++);
-			line.getFrom().addFromCount();
-			line.getTo().addToCount();
+	private UIData computeSize() {
+		if (data != null) {
+			data.compute();
+			return data;
 		}
 
-		tmpNodes.removeIf(e -> e.getFromCount() == 0 && e.getToCount() == 0);
-		int offsetX = 20;
-		for (Node node : tmpNodes) {
-			node.setX(offsetX);
-			offsetX += node.getWidth(g2d) + 20;
-		}
-
-		return offsetX;
+		data = new UIData(this, (Graphics2D) getGraphics());
+		return data;
 	}
 
 	@Override
@@ -398,18 +386,19 @@ public class Painter extends JComponent implements Scrollable {
 		g2d.transform(AffineTransform.getScaleInstance(ratio, ratio));
 		g2d.setColor(Color.black);
 
-		computeSize(g2d);
+		UIData data = computeSize();
 		Rectangle rect = getViewRect();
 
 		int top = (int) (rect.y / ratio);
-		int bottom = (int) ((rect.y + rect.height - 40) / ratio);
+		int rangeH = Math.min(rect.y + rect.height, getHeight());
+		int bottom = (int) ((rangeH - 40) / ratio);
 		int left = (int) (rect.x / ratio);
 		int right = (int) ((rect.x + rect.width - 40) / ratio);
 
 		int fontHeight = g2d.getFontMetrics().getAscent() + g2d.getFontMetrics().getDescent();
 
 		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
-		for (Node node : tmpNodes) {
+		for (Node node : data.getNodes()) {
 			if (node.getX() + node.getWidth() < left)
 				continue;
 
@@ -435,12 +424,11 @@ public class Painter extends JComponent implements Scrollable {
 		}
 
 		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
-		List<Line> allLinks = getAllLinks();
-		for (Line line : allLinks) {
+		for (Line line : data.getLinks()) {
 			if (line.getY() < top + Node.height + gap + fontHeight - 1)
 				continue;
 
-			if (line.getY() >= bottom - Node.height)
+			if (line.getY() > bottom)
 				break;
 
 			line.paint(g2d);
@@ -464,7 +452,7 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	public List<Line> getAllLinks() {
-		return new ArrayList<>(links.values());
+		return links.values().stream().sorted((a, b) -> a.getId() - b.getId()).collect(Collectors.toList());
 	}
 
 	@Override
@@ -488,20 +476,22 @@ public class Painter extends JComponent implements Scrollable {
 		this.gap = gap;
 	}
 
+	public int getNodeSize() {
+		return nodes.size();
+	}
+
+	public int getLinkSize() {
+		return links.size();
+	}
+
 	/**
 	 * @return
 	 */
 	@Override
 	public Dimension getPreferredSize() {
-		List<Node> tmpNodes = nodes.values().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
-
-		int offsetX = 20;
-		for (Node node : tmpNodes) {
-			offsetX += node.getWidth() + 20;
-		}
-
-		int width = offsetX;
-		int height = links.isEmpty() ? 100 : links.size() * 50 + 40;
+		UIData data = computeSize();
+		int width = data.getWidth();
+		int height = data.getHeight();
 
 		return new Dimension(width, height);
 	}

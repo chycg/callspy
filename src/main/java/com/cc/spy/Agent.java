@@ -11,7 +11,7 @@ import static net.bytebuddy.matcher.ElementMatchers.not;
 import java.lang.instrument.Instrumentation;
 
 import com.cc.Config;
-import com.cc.Stack;
+import com.cc.InvokeStack;
 import com.cc.Utils;
 
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -34,7 +34,7 @@ public class Agent {
 		TraceInterceptor.config = config;
 		TraceAdvisor.config = config;
 
-		Stack.init(config);
+		InvokeStack.init(config);
 		Utils.init(config);
 
 		transform(config, instrumentation);

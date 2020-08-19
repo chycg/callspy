@@ -3,7 +3,7 @@ package com.cc.spy;
 import java.lang.reflect.Method;
 
 import com.cc.Config;
-import com.cc.Stack;
+import com.cc.InvokeStack;
 
 import net.bytebuddy.asm.Advice;
 
@@ -22,9 +22,9 @@ public class TraceAdvisor {
 
 		if (config.needTrace(method)) {
 			if (config.isShowEntry()) {
-				Stack.push(mod, currentMethod, args);
+				InvokeStack.push(mod, currentMethod, args);
 			} else {
-				Stack.push();
+				InvokeStack.push();
 			}
 		}
 	}
@@ -38,16 +38,16 @@ public class TraceAdvisor {
 			Object[] args = config.isShowMethodInfo() ? method.getParameterTypes() : arguments;
 
 			Object resultValue = method.getReturnType() == void.class ? "void" : ret;
-			boolean hasLoop = Stack.hasLoop();
+			boolean hasLoop = InvokeStack.hasLoop();
 
 			if (hasLoop) {
 				config.addLoopMethod(methodName);
-				Stack.loopLog(mod, currentMethod, args, resultValue);
+				InvokeStack.loopLog(mod, currentMethod, args, resultValue);
 			} else {
-				Stack.log(mod, currentMethod, args, resultValue);
+				InvokeStack.log(mod, currentMethod, args, resultValue);
 			}
 
-			Stack.pop();
+			InvokeStack.pop();
 		}
 	}
 

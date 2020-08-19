@@ -17,9 +17,9 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 	protected final Painter parent;
 
-	private final String text;
+	private final String name;
 
-	private boolean selected;
+	protected boolean selected;
 
 	private boolean highLighted;
 
@@ -27,10 +27,10 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 	private Object userObject;
 
-	public Element(int id, String text, int order, Painter parent) {
+	public Element(int id, String name, int order, Painter parent) {
 		this.id = id <= 0 ? idMaker.getAndIncrement() : id;
 		this.order = order;
-		this.text = text;
+		this.name = name;
 		this.parent = parent;
 	}
 
@@ -78,8 +78,8 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		return id;
 	}
 
-	public String getText() {
-		return text;
+	public String getName() {
+		return name;
 	}
 
 	public int getOrder() {
@@ -124,12 +124,12 @@ public abstract class Element implements Serializable, Comparable<Element> {
 			return;
 		}
 
-		highLighted = this.text.contains(text.trim());
+		highLighted = this.name.contains(text.trim());
 	}
 
 	@Override
 	public String toString() {
-		return getType().name() + "[" + text + "]";
+		return getType().name() + "[" + name + "]";
 	}
 
 	@Override

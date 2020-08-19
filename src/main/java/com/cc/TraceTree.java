@@ -5,6 +5,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.io.File;
 
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.cc.tree.MainFrame;
@@ -12,18 +13,17 @@ import com.cc.tree.MainFrame;
 public class TraceTree {
 
 	public static void main(String[] args) {
-		String path = getClipboardPath();
-		if (path == null && Utils.isNotEmpty(args)) {
-			path = args[0];
-		}
+		String clipPath = getClipboardPath();
+		final String path = clipPath == null && Utils.isNotEmpty(args) ? args[0] : clipPath;
 
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		new MainFrame(path);
+		SwingUtilities.invokeLater(() -> {
+			try {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			new MainFrame(path);
+		});
 	}
 
 	/**

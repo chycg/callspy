@@ -391,9 +391,9 @@ public class Painter extends JComponent implements Scrollable {
 
 		int top = (int) (rect.y / ratio);
 		int rangeH = Math.min(rect.y + rect.height, getHeight());
-		int bottom = (int) ((rangeH - 40) / ratio);
+		int bottom = (int) (rangeH / ratio - Node.height - gap * 2);
 		int left = (int) (rect.x / ratio);
-		int right = (int) ((rect.x + rect.width - 40) / ratio);
+		int right = (int) ((rect.x + rect.width) / ratio) - 40;
 
 		int fontHeight = g2d.getFontMetrics().getAscent() + g2d.getFontMetrics().getDescent();
 

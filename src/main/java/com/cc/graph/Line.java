@@ -14,7 +14,7 @@ public class Line extends Element {
 	private static final long serialVersionUID = 1007906709323772156L;
 
 	public static final int rectW = 50;
-	private static final int rectH = 18;
+	public static final int rectH = 18;
 
 	private final Node from;
 
@@ -30,6 +30,9 @@ public class Line extends Element {
 
 	private Line exitLine;
 
+	/**
+	 * 行号，影子线不计入；影子线与实际线编号保持一致
+	 */
 	private int index;
 
 	public Line(Node from, Node to, String method, int order) {
@@ -45,6 +48,7 @@ public class Line extends Element {
 	public Line makeExitLine() {
 		Line newLine = new Line(to, from, getName(), 0);
 		newLine.selected = selected;
+		newLine.mod = mod;
 
 		newLine.entryLine = this;
 		this.exitLine = newLine;
@@ -142,7 +146,12 @@ public class Line extends Element {
 		int sy = getY();
 		String content = (isExitLine() ? entryLine.getIndex() : getIndex()) + ": " + getMethod();
 
-		g2d.setStroke(new BasicStroke(isSelected() ? 2f : 1f));
+		if (isExitLine()) {
+			g2d.setStroke(new BasicStroke(isSelected() ? 1.2f : 1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 2f, new float[] { 5, 4 }, 0f));
+		} else {
+			g2d.setStroke(new BasicStroke(isSelected() ? 2f : 1f));
+		}
+
 		g2d.setColor(getLineColor());
 
 		textWidth = getStrWidth(g2d, content);
@@ -154,7 +163,7 @@ public class Line extends Element {
 			g2d.drawLine(tx, sy, tx - angleWidth, sy + angleWidth2);
 
 			paintText(g2d, content, sx + 10, sy - textY);
-			if (tx - sx > 800)
+			if (tx - sx > 600)
 				paintText(g2d, content, tx - textWidth - 10, sy - textY);
 		} else if (from.getOrder() > to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
@@ -169,7 +178,7 @@ public class Line extends Element {
 
 			paintText(g2d, content, leftX, sy - textY);
 
-			if (sx - tx > 800)
+			if (sx - tx > 600)
 				paintText(g2d, content, tx + 10, sy - textY);
 		} else if (isSelfInvoke()) {
 			int offsetX = 8;

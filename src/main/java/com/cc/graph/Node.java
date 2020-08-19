@@ -104,13 +104,14 @@ public class Node extends Element {
 
 	@Override
 	public Rectangle getBounds() {
-		return new Rectangle(x, 10, width, height);
+		Rectangle rect = parent.getViewRect();
+		return new Rectangle(x, rect.y + parent.getGap(), width, height);
 	}
 
 	@Override
 	public boolean isContain(Point2D p) {
 		Rectangle rect = getBounds();
-		return rect.x <= p.getX() && rect.x + rect.width >= p.getX();
+		return rect.getX() <= p.getX() && rect.getX() + rect.getWidth() >= p.getX();
 	}
 
 	public boolean isNodeRange(Point2D point) {

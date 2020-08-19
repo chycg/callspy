@@ -80,6 +80,14 @@ public class Line extends Element {
 		return repeatCount == 1 ? getName() : getName() + " *" + repeatCount;
 	}
 
+	public Line getEntryLine() {
+		return entryLine;
+	}
+
+	public Line getExitLine() {
+		return exitLine;
+	}
+
 	/**
 	 * repeat count
 	 */

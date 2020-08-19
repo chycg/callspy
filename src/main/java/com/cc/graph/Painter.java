@@ -265,24 +265,46 @@ public class Painter extends JComponent implements Scrollable {
 			fireDataChangeEvent(DataChangeEvent.REMOVE, relatedLines);
 		} else if (element.isLine()) {
 			Line line = (Line) element;
-			links.remove(line.getId());
+			Set<Line> set = new HashSet<>();
+			doRemoveLine(line, set);
 
-			String text = line.getName();
 			Node from = line.getFrom();
-			Set<Line> sameInvocations = new HashSet<>();
+			String text = line.getName();
+			Set<Line> sameInvocations = links.values().stream().filter(e -> e.getFrom() == from && e.getName().equals(text))
+					.collect(Collectors.toSet());
 
-			// 删除同类下的同名方法
-			links.values().removeIf(e -> {
-				if (e.getFrom() == from && e.getName().equals(text)) {
-					selection.remove(e);
-					sameInvocations.add(e);
-					return true;
-				}
-				return false;
-			});
+			for (Line e : sameInvocations) {
+				doRemoveLine(e, set);
+			}
 
-			fireDataChangeEvent(DataChangeEvent.REMOVE, sameInvocations);
+			fireDataChangeEvent(DataChangeEvent.REMOVE, set);
 		}
+	}
+
+	private void doRemoveLine(Line line, Set<Line> set) {
+		links.remove(line.getId());
+		Set<Line> betweenLines = getBetweenLines(line);
+
+		selection.removeAll(betweenLines);
+		for (Line e : betweenLines) {
+			set.add(e);
+			links.remove(e.getId());
+		}
+	}
+
+	private Set<Line> getBetweenLines(Line target) {
+		Set<Line> set = new HashSet<>();
+		if (target != null) {
+			Line exitLine = target.getExitLine();
+			if (exitLine != null) {
+				int index = target.getOrder();
+				int end = exitLine.getOrder();
+
+				set = data.getLinks().stream().filter(e -> !e.isExitLine() && e.getOrder() > index && e.getOrder() < end).collect(Collectors.toSet());
+			}
+		}
+
+		return set;
 	}
 
 	/**

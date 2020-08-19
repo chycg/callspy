@@ -3,6 +3,8 @@ package com.cc;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.cc.tree.Mod;
+
 public class InvokeStack {
 
 	private static Config config;
@@ -25,11 +27,9 @@ public class InvokeStack {
 		trace.push();
 	}
 
-	public static void push(int mod, String method, Object[] args) {
+	public static void push(Mod mod, String method, Object[] args) {
 		push();
-
-		if (config.isShowEntry())
-			log(mod, method, args);
+		log(mod, method, args);
 	}
 
 	public static int getDepth() {
@@ -65,7 +65,7 @@ public class InvokeStack {
 		return map.get(Thread.currentThread().getId());
 	}
 
-	public static void log(int mod, String string) {
+	public static void log(Mod mod, String string) {
 		Trace trace = getTrace();
 		trace.write(mod, string);
 
@@ -73,11 +73,11 @@ public class InvokeStack {
 			System.out.println(trace.getPrefix(mod) + string);
 	}
 
-	public static void log(int mod, String method, Object[] args) {
+	public static void log(Mod mod, String method, Object[] args) {
 		log(mod, method + "(" + Utils.getArgs(args) + ")");
 	}
 
-	public static void log(int mod, String method, Object[] args, Object returnValue) {
+	public static void log(Mod mod, String method, Object[] args, Object returnValue) {
 		log(mod, method + "(" + Utils.getArgs(args) + ") -> " + Utils.toString(returnValue));
 	}
 
@@ -88,7 +88,7 @@ public class InvokeStack {
 	 * @param args
 	 * @param returnValue
 	 */
-	public static void loopLog(int mod, String method, Object[] args, Object returnValue) {
+	public static void loopLog(Mod mod, String method, Object[] args, Object returnValue) {
 		if (returnValue == null)
 			returnValue = "null";
 		else

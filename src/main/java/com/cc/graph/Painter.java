@@ -415,7 +415,7 @@ public class Painter extends JComponent implements Scrollable {
 
 			g2d.setColor(Color.cyan.darker());
 			int counterY = (int) ((rect.y + rect.height / 2) / ratio) / 50 * 50;
-			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - fontHeight);
+			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - fontHeight + 3);
 
 			// bottom class
 			g2d.translate(0, bottom);

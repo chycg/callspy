@@ -3,9 +3,10 @@ package com.cc;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.lang.reflect.Modifier;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import com.cc.tree.Mod;
 
 public class Trace {
 
@@ -55,7 +56,7 @@ public class Trace {
 		initIndent = initIndent.substring(indent.length());
 	}
 
-	public void write(int mod, String str) {
+	public void write(Mod mod, String str) {
 		String prefix = getPrefix(mod);
 		String line = prefix + str;
 
@@ -77,18 +78,8 @@ public class Trace {
 	 * @param mod
 	 * @return
 	 */
-	public String getPrefix(int mod) {
-		String prefix = initIndent;
-
-		if (Modifier.isPublic(mod)) {
-			prefix = prefix.replace('~', '+');
-		} else if (Modifier.isProtected(mod)) {
-			prefix = prefix.replace('~', '-');
-		} else if (Modifier.isPrivate(mod)) {
-			prefix = prefix.replace('~', '*');
-		}
-
-		return prefix;
+	public String getPrefix(Mod mod) {
+		return mod == Mod.DEFAULT ? initIndent : initIndent.replace('~', mod.getSign());
 	}
 
 	@Override

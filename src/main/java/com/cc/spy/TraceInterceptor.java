@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.cc.Config;
 import com.cc.InvokeStack;
+import com.cc.tree.Mod;
 
 import net.bytebuddy.implementation.bind.annotation.AllArguments;
 import net.bytebuddy.implementation.bind.annotation.Origin;
@@ -25,7 +26,7 @@ public class TraceInterceptor {
 	@RuntimeType
 	public static Object intercept(@Origin Method method, @SuperCall Callable<?> callable, @AllArguments Object[] arguments) throws Exception {
 		Class<?> clz = method.getDeclaringClass();
-		int mod = method.isDefault() ? 0 : method.getModifiers();
+		Mod mod = Mod.getByModifier(method.getModifiers());
 
 		String methodName = method.getName();
 		String currentMethod = clz.getName() + "." + methodName;
@@ -44,7 +45,7 @@ public class TraceInterceptor {
 		showStatus.get().put(level, true);
 
 		Boolean parentShow = showStatus.get().getOrDefault(level - 1, true); // 上层是否显示
-		boolean needTrace = parentShow && config.needTrace(method); // 若上层屏蔽了，本层继续屏蔽
+		boolean needTrace = parentShow && config.needTrace(method, mod); // 若上层屏蔽了，本层继续屏蔽
 		showStatus.get().put(level, needTrace);
 
 		if (needTrace) {

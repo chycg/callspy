@@ -146,22 +146,31 @@ public class Line extends Element {
 		g2d.setColor(getLineColor());
 
 		textWidth = getStrWidth(g2d, content);
+		int textY = g2d.getFontMetrics().getDescent();
+
 		if (from.getOrder() < to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy + angleWidth2);
 
-			paintText(g2d, content, sx + 10, sy - 5);
+			paintText(g2d, content, sx + 10, sy - textY);
 			if (tx - sx > 800)
-				paintText(g2d, content, tx - textWidth - 10, sy - 5);
+				paintText(g2d, content, tx - textWidth - 10, sy - textY);
 		} else if (from.getOrder() > to.getOrder()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy + angleWidth2);
 
-			paintText(g2d, content, sx - textWidth - 10, sy - 5);
+			int leftX = tx;
+			if (sx - leftX < textWidth + 20) // 短线，文字左对齐
+				leftX = leftX + 10;
+			else
+				leftX = sx - textWidth - 10; // 长线，文字右对齐
+
+			paintText(g2d, content, leftX, sy - textY);
+
 			if (sx - tx > 800)
-				paintText(g2d, content, tx + 10, sy - 5);
+				paintText(g2d, content, tx + 10, sy - textY);
 		} else if (isSelfInvoke()) {
 			int offsetX = 8;
 			g2d.drawLine(sx, sy, sx + rectW - offsetX, sy);
@@ -172,7 +181,7 @@ public class Line extends Element {
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH - angleWidth2);
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH + angleWidth2);
 
-			paintText(g2d, content, sx + 2, sy - g2d.getFontMetrics().getDescent());
+			paintText(g2d, content, sx + 10, sy - textY);
 		}
 	}
 

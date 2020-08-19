@@ -16,12 +16,13 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.cc.tree.Mod;
+
 public class Config {
 
 	private String includes;
 	private Set<String> excludes;
 
-	private boolean showEntry;
 	private boolean showGetter;
 
 	/**
@@ -40,6 +41,14 @@ public class Config {
 	private boolean showParamType;
 
 	private boolean showJson;
+
+	/**
+	 * 日志范围，1=public,2=protected,3=default,4=private
+	 * 
+	 * 值越小，记录内容越少
+	 * 
+	 */
+	private int logLevel = 4;
 
 	/**
 	 * 相同方法出现次数
@@ -85,11 +94,11 @@ public class Config {
 		includes = properties.getProperty("include");
 		excludes = Utils.splitString(properties.getProperty("exclude"));
 
-		String value = properties.getProperty("showEntry", "true"); // 是否显示方法进入
-		showEntry = Boolean.valueOf(value);
-
-		value = properties.getProperty("showGetter");
+		String value = properties.getProperty("showGetter");
 		showGetter = Boolean.valueOf(value);
+
+		value = properties.getProperty("logLevel", "4");
+		logLevel = Integer.parseInt(value);
 
 		value = properties.getProperty("maxCount", "10");
 		maxCount = Integer.parseInt(value);
@@ -147,8 +156,11 @@ public class Config {
 		}
 	}
 
-	public boolean needTrace(Method method) {
+	public boolean needTrace(Method method, Mod mod) {
 		String methodName = method.getName();
+		if (mod.getCode() > logLevel)
+			return false;
+
 		if (isBasicMethod(methodName) || loopMethods.contains(methodName))
 			return false;
 
@@ -189,10 +201,6 @@ public class Config {
 		return excludes;
 	}
 
-	public boolean isShowEntry() {
-		return showEntry;
-	}
-
 	public boolean isShowGetter() {
 		return showGetter;
 	}
@@ -223,6 +231,10 @@ public class Config {
 
 	public boolean isShowConsoleLog() {
 		return showConsoleLog;
+	}
+
+	public int getLogLevel() {
+		return logLevel;
 	}
 
 	public String getPath() {

@@ -1,6 +1,7 @@
 package com.cc.tree;
 
 import java.awt.Color;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,4 +58,16 @@ public enum Mod {
 		return Stream.of(Mod.values()).anyMatch(e -> e.sign == c);
 	}
 
+	public static Mod getByModifier(int mod) {
+		if (Modifier.isPublic(mod))
+			return Mod.PUBLIC;
+
+		if (Modifier.isPrivate(mod))
+			return Mod.PRIVATE;
+
+		if (Modifier.isProtected(mod))
+			return Mod.PROTECTED;
+
+		return Mod.DEFAULT;
+	}
 }

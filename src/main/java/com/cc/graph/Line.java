@@ -205,10 +205,11 @@ public class Line extends Element {
 	 * 影子选中也算
 	 */
 	@Override
-	public boolean isContain(Point2D p) {
-		if (getBounds().contains(p))
+	public boolean isContain(Point2D point) {
+		if (super.isContain(point))
 			return true;
 
+		Point2D p = getRatioPoint(point);
 		if (from == to) {
 			int sx = from.getCenterX();
 			int sy = getY();

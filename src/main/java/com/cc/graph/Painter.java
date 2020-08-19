@@ -11,7 +11,6 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -116,18 +115,17 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	public Element getElementByLocation(Point p) {
-		Point2D p2 = new Point2D.Float(p.x / ratio, p.y / ratio);
 		List<Node> allNodes = getAllNodes();
 
-		Element target = allNodes.stream().filter(e -> e.isNodeRange(p2)).findFirst().orElse(null);
+		Element target = allNodes.stream().filter(e -> e.isNodeRange(p)).findFirst().orElse(null);
 		if (target != null)
 			return target;
 
-		target = getAllLinks().stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		target = getAllLinks().stream().filter(e -> e.isContain(p)).findFirst().orElse(null);
 		if (target != null)
 			return target;
 
-		target = allNodes.stream().filter(e -> e.isContain(p2)).findFirst().orElse(null);
+		target = allNodes.stream().filter(e -> e.isContain(p)).findFirst().orElse(null);
 		return target;
 	}
 

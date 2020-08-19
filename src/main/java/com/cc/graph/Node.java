@@ -109,19 +109,22 @@ public class Node extends Element {
 	}
 
 	@Override
-	public boolean isContain(Point2D p) {
+	public boolean isContain(Point2D point) {
+		Point2D p = getRatioPoint(point);
+
 		Rectangle rect = getBounds();
 		return rect.getX() <= p.getX() && rect.getX() + rect.getWidth() >= p.getX();
 	}
 
 	public boolean isNodeRange(Point2D point) {
-		Rectangle rect = getBounds();
-		if (rect.contains(point))
+		if (super.isContain(point))
 			return true;
 
+		Point2D p = getRatioPoint(point);
+		Rectangle rect = getBounds();
 		Rectangle viewRect = parent.getViewRect();
 		rect.y = viewRect.y + viewRect.height - getHeight() - parent.getGap();
 
-		return rect.contains(point);
+		return rect.contains(p);
 	}
 }

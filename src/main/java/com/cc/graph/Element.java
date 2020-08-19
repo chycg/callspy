@@ -110,8 +110,13 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		return g.getFontMetrics().stringWidth(text);
 	}
 
-	public boolean isContain(Point2D p) {
-		return getBounds().contains(p);
+	public boolean isContain(Point2D point) {
+		Point2D p2 = getRatioPoint(point);
+		return getBounds().contains(p2);
+	}
+
+	public Point2D getRatioPoint(Point2D p) {
+		return new Point2D.Double(p.getX() / parent.getRatio(), p.getY() / parent.getRatio());
 	}
 
 	public boolean isHighLighted() {

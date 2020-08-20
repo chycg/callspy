@@ -2,8 +2,8 @@ package com.cc.graph;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -110,13 +110,8 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		return g.getFontMetrics().stringWidth(text);
 	}
 
-	public boolean isContain(Point2D point) {
-		Point2D p2 = getRatioPoint(point);
-		return getBounds().contains(p2);
-	}
-
-	public Point2D getRatioPoint(Point2D p) {
-		return new Point2D.Double(p.getX() / parent.getRatio(), p.getY() / parent.getRatio());
+	public boolean isContain(Point point) {
+		return getBounds().contains(point);
 	}
 
 	public boolean isHighLighted() {

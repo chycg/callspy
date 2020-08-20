@@ -1,5 +1,7 @@
 package com.cc.graph.event;
 
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -19,6 +21,12 @@ import com.cc.graph.Painter;
 public class DefaultHandler extends MouseAdapter implements KeyListener {
 
 	private Painter painter;
+
+	private Point startPoint;
+
+	private Point endPoint;
+
+	private Rectangle dragRange = new Rectangle();
 
 	public DefaultHandler(Painter painter) {
 		this.painter = painter;
@@ -117,7 +125,15 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 
 	@Override
 	public void mousePressed(MouseEvent e) {
+		startPoint = e.getPoint();
 		painter.requestFocus();
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		startPoint = null;
+		endPoint = null;
+		painter.repaint();
 	}
 
 	@Override
@@ -125,7 +141,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 		if (e.getButton() != MouseEvent.BUTTON1)
 			return;
 
-		Element element = painter.getElementByLocation(e.getPoint());
+		Element element = painter.getElementByLocation(getScalePoint(e.getPoint()));
 		if (e.isControlDown()) {
 			if (element == null)
 				return;
@@ -136,9 +152,9 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				painter.addSelection(element);
 		} else {
 			if (element == null || element.isSelected()) {
-				painter.setSelection(null);
+				painter.clearSelection();
 			} else {
-				boolean onlyNode = element.isNode() && ((Node) element).isNodeRange(e.getPoint());
+				boolean onlyNode = element.isNode() && ((Node) element).isNodeRange(getScalePoint(e.getPoint()));
 				if (onlyNode) {
 					painter.ensureVisible(element);
 				} else {
@@ -148,5 +164,35 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				painter.setSelection(element);
 			}
 		}
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent e) {
+		endPoint = e.getPoint();
+		painter.setRangeSelection(getDragRange());
+		painter.repaint();
+	}
+
+	private Point getScalePoint(Point p) {
+		return new Point((int) (p.x / painter.getRatio()), (int) (p.y / painter.getRatio()));
+	}
+
+	public Rectangle getDragRange() {
+		if (startPoint == null || endPoint == null)
+			return null;
+
+		int x = Math.min(startPoint.x, endPoint.x);
+		int y = Math.min(startPoint.y, endPoint.y);
+		int width = Math.abs(startPoint.x - endPoint.x);
+		int height = Math.abs(startPoint.y - endPoint.y);
+
+		float ratio = painter.getRatio();
+		dragRange.x = (int) (x / ratio);
+		dragRange.y = (int) (y / ratio);
+		dragRange.width = (int) (width / ratio);
+		dragRange.height = (int) (height / ratio);
+
+		return dragRange;
+
 	}
 }

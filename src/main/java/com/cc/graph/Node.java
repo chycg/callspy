@@ -3,14 +3,14 @@ package com.cc.graph;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 
 public class Node extends Element {
 
 	private static final long serialVersionUID = -1365511871749616230L;
 
-	public static final int gap = 3;
+	public static final int gap = 2;
 
 	public static final int height = 20;
 
@@ -109,22 +109,19 @@ public class Node extends Element {
 	}
 
 	@Override
-	public boolean isContain(Point2D point) {
-		Point2D p = getRatioPoint(point);
-
+	public boolean isContain(Point point) {
 		Rectangle rect = getBounds();
-		return rect.getX() <= p.getX() && rect.getX() + rect.getWidth() >= p.getX();
+		return rect.getX() <= point.getX() && rect.getX() + rect.getWidth() >= point.getX();
 	}
 
-	public boolean isNodeRange(Point2D point) {
+	public boolean isNodeRange(Point point) {
 		if (super.isContain(point))
 			return true;
 
-		Point2D p = getRatioPoint(point);
 		Rectangle rect = getBounds();
 		Rectangle viewRect = parent.getViewRect();
 		rect.y = viewRect.y + viewRect.height - getHeight() - parent.getGap();
 
-		return rect.contains(p);
+		return rect.contains(point);
 	}
 }

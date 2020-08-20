@@ -67,6 +67,7 @@ public class Painter extends JComponent implements Scrollable {
 
 		addKeyListener(handler);
 		addMouseListener(handler);
+		addMouseMotionListener(handler);
 		addMouseWheelListener(handler);
 	}
 
@@ -130,25 +131,64 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	public void addSelection(Element e) {
-		if (e == null || e.isSelected())
+		addSelection(Arrays.asList(e));
+	}
+
+	public void addSelection(Collection<? extends Element> c) {
+		if (c == null || c.isEmpty())
 			return;
 
-		e.setSelected(true);
-		selection.add(e);
+		c.removeIf(e -> selection.contains(e));
+		if (c.isEmpty())
+			return;
+
+		for (Element e : c) {
+			if (e == null)
+				continue;
+
+			e.setSelected(true);
+			selection.add(e);
+		}
 
 		repaint();
-		fireSelectionChangeEvent(SelectionEvent.ADD_SELECTION, Arrays.asList(e));
+		fireSelectionChangeEvent(SelectionEvent.ADD_SELECTION, c);
+	}
+
+	public void setRangeSelection(Rectangle rect) {
+		List<Element> unselected = selection.stream().filter(e -> !rect.contains(e.getBounds())).collect(Collectors.toList());
+		removeSelection(unselected);
+
+		List<Node> nodes = getAllNodes().stream().filter(e -> rect.contains(e.getBounds())).collect(Collectors.toList());
+		nodes.removeAll(selection);
+
+		List<Line> links = getAllLinks().stream().filter(e -> rect.contains(e.getBounds())).collect(Collectors.toList());
+		links.removeAll(selection);
+
+		Collection<Element> c = new HashSet<>();
+		c.addAll(nodes);
+		c.addAll(links);
+
+		addSelection(c);
 	}
 
 	public void removeSelection(Element e) {
-		if (e == null || !e.isSelected())
+		removeSelection(Arrays.asList(e));
+	}
+
+	public void removeSelection(Collection<? extends Element> c) {
+		if (c == null || c.isEmpty())
 			return;
 
-		e.setSelected(false);
-		selection.remove(e);
-		repaint();
+		for (Element e : c) {
+			if (e == null || !e.isSelected())
+				continue;
 
-		fireSelectionChangeEvent(SelectionEvent.REMOVE_SELECTION, Arrays.asList(e));
+			e.setSelected(false);
+			selection.remove(e);
+		}
+
+		repaint();
+		fireSelectionChangeEvent(SelectionEvent.REMOVE_SELECTION, c);
 	}
 
 	public void clearSelection() {
@@ -233,55 +273,61 @@ public class Painter extends JComponent implements Scrollable {
 			return;
 
 		c.forEach(e -> remove0(e));
-
 		repaint();
 	}
 
-	public void removeElements(Object source, Collection<? extends Element> c) {
-		if (Utils.isEmpty(c))
-			return;
-
-		c.forEach(e -> remove0(e));
-
-		fireDataChangeEvent(DataChangeEvent.REMOVE, c);
-		repaint();
+	public void removeSelection() {
+		removeElements(getSelectedElements());
 	}
 
 	private void remove0(Element element) {
-		if (element == null)
+		if (element == null || element.getName() == null)
 			return;
 
 		selection.remove(element);
+		Set<Element> targets = new HashSet<>();
+		targets.add(element);
+
 		if (element.isNode()) {
 			String className = element.getName();
-			nodes.remove(className);
+			if (!nodes.containsKey(className))
+				return;
 
+			nodes.remove(className);
 			Set<Line> relatedLines = links.values().stream()
 					.filter(e -> e.getFrom().getName().equals(className) || e.getTo().getName().equals(className)).collect(Collectors.toSet());
 
-			links.values().removeAll(relatedLines);
-			selection.removeAll(relatedLines);
-
-			fireDataChangeEvent(DataChangeEvent.REMOVE, relatedLines);
+			Set<Element> set = removeLines(relatedLines);
+			targets.addAll(set);
 		} else if (element.isLine()) {
 			Line line = (Line) element;
-			Set<Line> set = new HashSet<>();
+			Set<Element> set = new HashSet<>();
 			doRemoveLine(line, set);
 
 			Node from = line.getFrom();
 			String text = line.getName();
-			Set<Line> sameInvocations = links.values().stream().filter(e -> e.getFrom() == from && e.getName().equals(text))
-					.collect(Collectors.toSet());
+			Set<Line> sameMethods = links.values().stream().filter(e -> e.getFrom() == from && e.getName().equals(text)).collect(Collectors.toSet());
+			set.addAll(removeLines(sameMethods));
 
-			for (Line e : sameInvocations) {
-				doRemoveLine(e, set);
-			}
-
-			fireDataChangeEvent(DataChangeEvent.REMOVE, set);
+			targets.addAll(set);
 		}
+
+		fireDataChangeEvent(DataChangeEvent.REMOVE, targets);
 	}
 
-	private void doRemoveLine(Line line, Set<Line> set) {
+	private Set<Element> removeLines(Collection<Line> lines) {
+		if (Utils.isEmpty(lines))
+			return new HashSet<>();
+
+		Set<Element> set = new HashSet<>();
+		for (Line e : lines) {
+			doRemoveLine(e, set);
+		}
+
+		return set;
+	}
+
+	private void doRemoveLine(Line line, Set<Element> set) {
 		links.remove(line.getId());
 		Set<Line> betweenLines = getBetweenLines(line);
 
@@ -397,6 +443,8 @@ public class Painter extends JComponent implements Scrollable {
 		return data;
 	}
 
+	BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		Graphics2D g2d = (Graphics2D) g.create();
@@ -417,7 +465,6 @@ public class Painter extends JComponent implements Scrollable {
 
 		int fontHeight = g2d.getFontMetrics().getAscent() + g2d.getFontMetrics().getDescent();
 
-		BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);
 		for (Node node : data.getNodes()) {
 			if (node.getX() + node.getWidth() < left)
 				continue;
@@ -452,6 +499,16 @@ public class Painter extends JComponent implements Scrollable {
 				break;
 
 			line.paint(g2d);
+		}
+
+		Rectangle range = handler.getDragRange();
+		if (range != null) {
+			g2d.setColor(Color.blue);
+			g2d.setStroke(stroke);
+			g2d.drawRect(range.x, range.y, range.width, range.height);
+
+			g2d.setColor(new Color(255, 200, 0, 90));
+			g2d.fillRect(range.x + 1, range.y + 1, range.width - 2, range.height - 2);
 		}
 	}
 

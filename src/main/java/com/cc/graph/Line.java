@@ -3,8 +3,8 @@ package com.cc.graph;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.geom.Point2D;
 
 import com.cc.tree.Invocation;
 import com.cc.tree.Mod;
@@ -213,19 +213,18 @@ public class Line extends Element {
 	 * 影子选中也算
 	 */
 	@Override
-	public boolean isContain(Point2D point) {
+	public boolean isContain(Point point) {
 		if (super.isContain(point))
 			return true;
 
-		Point2D p = getRatioPoint(point);
 		if (from == to) {
 			int sx = from.getCenterX();
 			int sy = getY();
 
-			return new Rectangle(sx, sy - 20, textWidth, rectH).contains(p);
+			return new Rectangle(sx, sy - 20, textWidth, rectH).contains(point);
 		}
 
-		return entryLine != null && entryLine.getBounds().contains(p) || exitLine != null && exitLine.getBounds().contains(p);
+		return entryLine != null && entryLine.getBounds().contains(point) || exitLine != null && exitLine.getBounds().contains(point);
 	}
 
 	@Override

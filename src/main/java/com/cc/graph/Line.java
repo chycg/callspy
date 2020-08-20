@@ -189,7 +189,7 @@ public class Line extends Element {
 			if (sx - tx > 600)
 				paintText(g2d, content, tx + 10, sy - textY);
 		} else if (isSelfInvoke()) {
-			int offsetX = 8;
+			int offsetX = 5;
 			g2d.drawLine(sx, sy, sx + rectW - offsetX, sy);
 
 			g2d.drawLine(sx + rectW - offsetX, sy, sx + rectW - offsetX, sy + rectH);
@@ -240,7 +240,7 @@ public class Line extends Element {
 		int y = getY();
 		int width = Math.abs(from.getCenterX() - to.getCenterX());
 
-		return new Rectangle(x - 2, y - 30, width + 4, 40);
+		return new Rectangle(x - 2, y - 15, width + 4, 20);
 	}
 
 }

@@ -8,9 +8,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.cc.graph.Element;
@@ -99,16 +97,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				e.consume();
 			}
 		} else if (code == KeyEvent.VK_F5) {
-			Set<Node> linkedNodes = new HashSet<>();
-			painter.getAllLinks().forEach(line -> {
-				linkedNodes.add(line.getFrom());
-				linkedNodes.add(line.getTo());
-			});
-
-			List<Node> allNodes = painter.getAllNodes();
-			allNodes.removeAll(linkedNodes);
-			painter.removeElements(allNodes);
-			painter.fireDataChangeEvent(DataChangeEvent.REMOVE, allNodes);
+			painter.clean();
 		}
 	}
 

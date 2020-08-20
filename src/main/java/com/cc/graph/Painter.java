@@ -214,6 +214,15 @@ public class Painter extends JComponent implements Scrollable {
 		repaint();
 	}
 
+	public void clean() {
+		Set<Node> isolatedSet = getAllNodes().stream().filter(e -> e.isIsolated()).collect(Collectors.toSet());
+		if (isolatedSet.isEmpty())
+			return;
+
+		fireDataChangeEvent(DataChangeEvent.REMOVE, isolatedSet);
+		removeElements(isolatedSet);
+	}
+
 	protected Rectangle getViewRect() {
 		return ((JViewport) getParent()).getViewRect();
 	}
@@ -272,19 +281,14 @@ public class Painter extends JComponent implements Scrollable {
 		if (Utils.isEmpty(c))
 			return;
 
-		c.forEach(e -> remove0(e));
+		c.forEach(e -> doRemove(e));
 		repaint();
 	}
 
-	public void removeSelection() {
-		removeElements(getSelectedElements());
-	}
-
-	private void remove0(Element element) {
+	private void doRemove(Element element) {
 		if (element == null || element.getName() == null)
 			return;
 
-		selection.remove(element);
 		Set<Element> targets = new HashSet<>();
 		targets.add(element);
 
@@ -293,12 +297,15 @@ public class Painter extends JComponent implements Scrollable {
 			if (!nodes.containsKey(className))
 				return;
 
-			nodes.remove(className);
-			Set<Line> relatedLines = links.values().stream()
-					.filter(e -> e.getFrom().getName().equals(className) || e.getTo().getName().equals(className)).collect(Collectors.toSet());
+			remove0(element);
+			Set<Line> fromLines = links.values().stream().filter(e -> e.getFrom() == element).collect(Collectors.toSet());
+			Set<Line> toLines = links.values().stream().filter(e -> e.getTo() == element).collect(Collectors.toSet());
+			remove0(toLines);
 
-			Set<Element> set = removeLines(relatedLines);
+			Set<Element> set = removeLines(fromLines);
+
 			targets.addAll(set);
+			targets.addAll(toLines);
 		} else if (element.isLine()) {
 			Line line = (Line) element;
 			Set<Element> set = new HashSet<>();
@@ -328,13 +335,42 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	private void doRemoveLine(Line line, Set<Element> set) {
-		links.remove(line.getId());
+		remove0(line);
 		Set<Line> betweenLines = getBetweenLines(line);
-
-		selection.removeAll(betweenLines);
 		for (Line e : betweenLines) {
 			set.add(e);
-			links.remove(e.getId());
+			remove0(e);
+		}
+	}
+
+	private void remove0(Element e) {
+		remove0(Arrays.asList(e));
+	}
+
+	private void remove0(Collection<? extends Element> c) {
+		if (c == null || c.isEmpty())
+			return;
+
+		for (Element e : c) {
+			if (e == null)
+				continue;
+
+			selection.remove(e);
+			if (e.isLine()) {
+				Line line = (Line) e;
+				links.remove(e.getId());
+
+				line.getFrom().decreaseFromCount();
+				line.getTo().decreaseToCount();
+
+				if (line.getFrom().isIsolated())
+					remove0(line.getFrom());
+
+				if (line.getTo().isIsolated())
+					remove0(line.getTo());
+			} else {
+				nodes.remove(e.getName());
+			}
 		}
 	}
 
@@ -346,7 +382,8 @@ public class Painter extends JComponent implements Scrollable {
 				int index = target.getOrder();
 				int end = exitLine.getOrder();
 
-				set = uiData.getLinks().stream().filter(e -> !e.isExitLine() && e.getOrder() > index && e.getOrder() < end).collect(Collectors.toSet());
+				set = uiData.getLinks().stream().filter(e -> !e.isExitLine() && e.getOrder() > index && e.getOrder() < end)
+						.collect(Collectors.toSet());
 			}
 		}
 

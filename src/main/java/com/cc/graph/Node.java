@@ -88,6 +88,18 @@ public class Node extends Element {
 		toCount++;
 	}
 
+	public void decreaseFromCount() {
+		fromCount--;
+	}
+
+	public void decreaseToCount() {
+		toCount--;
+	}
+
+	public boolean isIsolated() {
+		return fromCount == 0 && toCount == 0;
+	}
+
 	@Override
 	public void paint(Graphics2D g2d) {
 		g2d.setColor(Color.black);

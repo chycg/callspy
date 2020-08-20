@@ -310,15 +310,15 @@ public class MainFrame extends JFrame {
 	}
 
 	private JComponent getCenterPane() {
-		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(tree), new JScrollPane(taDetail));
+		JSplitPane rootSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabPane, new JScrollPane(taDetail));
 		rootSplit.setDividerLocation(1500);
 		rootSplit.setOneTouchExpandable(true);
 		rootSplit.setDividerSize(10);
 
-		tabPane.addTab("Tree", rootSplit);
+		tabPane.addTab("Tree", new JScrollPane(tree));
 		tabPane.addTab("Graph", new JScrollPane(painter));
 
-		return tabPane;
+		return rootSplit;
 	}
 
 	public boolean isTreeView() {
@@ -422,10 +422,7 @@ public class MainFrame extends JFrame {
 				return;
 
 			Invocation data = (Invocation) node.getUserObject();
-			tfSelection.setText(data.getMethod());
-
-			String tagLine = renderer.getTagLine(data);
-			taDetail.setText("<font size='5' face='Courier New'>" + tagLine + "</font>");
+			selected(data);
 		});
 
 		painter.addSelectionListener(e -> {
@@ -442,7 +439,8 @@ public class MainFrame extends JFrame {
 				tfSelection.setText(target.getName());
 			else if (target.isLine()) {
 				Line line = (Line) target;
-				tfSelection.setText(line.getFrom().getName() + " -> " + line.getTo().getName() + "." + line.getName() + "()");
+				Invocation invoke = line.getInvoke();
+				selected(invoke);
 			}
 		});
 
@@ -567,6 +565,15 @@ public class MainFrame extends JFrame {
 		}
 
 		setTitle(title + " - rows: " + nodeCount);
+	}
+
+	private void selected(Invocation data) {
+		if (data == null)
+			return;
+
+		tfSelection.setText(data.getMethod());
+		String tagLine = renderer.getTagLine(data);
+		taDetail.setText("<font size='5' face='Courier New'>" + tagLine + "</font>");
 	}
 
 	private void parseFile() {

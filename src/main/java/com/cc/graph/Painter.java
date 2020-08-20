@@ -57,7 +57,7 @@ public class Painter extends JComponent implements Scrollable {
 
 	private int gap = 10;
 
-	private UIData data;
+	private UIData uiData;
 
 	private Line lastLine;
 
@@ -346,7 +346,7 @@ public class Painter extends JComponent implements Scrollable {
 				int index = target.getOrder();
 				int end = exitLine.getOrder();
 
-				set = data.getLinks().stream().filter(e -> !e.isExitLine() && e.getOrder() > index && e.getOrder() < end).collect(Collectors.toSet());
+				set = uiData.getLinks().stream().filter(e -> !e.isExitLine() && e.getOrder() > index && e.getOrder() < end).collect(Collectors.toSet());
 			}
 		}
 
@@ -434,13 +434,13 @@ public class Painter extends JComponent implements Scrollable {
 	}
 
 	private UIData computeSize() {
-		if (data != null) {
-			data.compute();
-			return data;
+		if (uiData != null) {
+			uiData.compute();
+			return uiData;
 		}
 
-		data = new UIData(this, (Graphics2D) getGraphics());
-		return data;
+		uiData = new UIData(this, (Graphics2D) getGraphics());
+		return uiData;
 	}
 
 	BasicStroke stroke = new BasicStroke(1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 3.5f, new float[] { 10, 5 }, 0f);

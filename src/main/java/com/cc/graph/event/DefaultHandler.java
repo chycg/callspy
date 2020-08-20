@@ -24,6 +24,8 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 
 	private Point endPoint;
 
+	private Point movingPoint;
+
 	private Rectangle dragRange = new Rectangle();
 
 	public DefaultHandler(Painter painter) {
@@ -143,11 +145,10 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 			if (element == null || element.isSelected()) {
 				painter.clearSelection();
 			} else {
-				boolean onlyNode = element.isNode() && ((Node) element).isNodeRange(getScalePoint(e.getPoint()));
-				if (onlyNode) {
+				if (element.isLine()) {
 					painter.ensureVisible(element);
 				} else {
-					painter.ensureLineVisible(element);
+					painter.ensureFirstLineVisible(element);
 				}
 
 				painter.setSelection(element);
@@ -160,6 +161,12 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 		endPoint = e.getPoint();
 		painter.setRangeSelection(getDragRange());
 		painter.repaint();
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {
+		// movingPoint = getScalePoint(e.getPoint());
+		// painter.repaint();
 	}
 
 	private Point getScalePoint(Point p) {
@@ -182,6 +189,9 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 		dragRange.height = (int) (height / ratio);
 
 		return dragRange;
+	}
 
+	public Point getMovingPoint() {
+		return movingPoint;
 	}
 }

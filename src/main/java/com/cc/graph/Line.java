@@ -103,6 +103,10 @@ public class Line extends Element {
 		this.index = index;
 	}
 
+	public boolean isEntryLine() {
+		return exitLine != null;
+	}
+
 	public boolean isExitLine() {
 		return entryLine != null;
 	}

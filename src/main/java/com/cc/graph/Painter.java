@@ -231,15 +231,35 @@ public class Painter extends JComponent implements Scrollable {
 	 * @param target
 	 */
 	public void ensureVisible(Element target) {
-		Rectangle rect = target.getTextBounds();
-		Rectangle viewRect = getViewRect();
-		if (viewRect.y + viewRect.getHeight() - rect.y < 100)
-			rect.height += 100;
+		if (target.isLine()) {
+			ensureLineVisible((Line) target);
+		} else if (target.isNode()) {
+			ensureNodeVisible((Node) target);
+		}
+	}
+
+	private void ensureNodeVisible(Node node) {
+		Rectangle rect = node.getTextBounds();
+		scrollRectToVisible(getScaleRect(rect));
+	}
+
+	private void ensureLineVisible(Line line) {
+		Rectangle rect0 = line.getTextBounds();
+		Rectangle rect1 = line.getExitLine() != null ? line.getExitLine().getTextBounds() : line.getEntryLine().getTextBounds();
+
+		Rectangle rect = new Rectangle(rect0);
+		rect.y = Math.min(rect0.y, rect1.y) - 50;
+		rect.height = Math.abs(rect0.y - rect1.y) + 120;
 
 		scrollRectToVisible(getScaleRect(rect));
 	}
 
-	public void ensureLineVisible(Element target) {
+	/**
+	 * 点击单个线，显示当前线条范围；否则显示当前类下的首个调用线
+	 * 
+	 * @param target
+	 */
+	public void ensureFirstLineVisible(Element target) {
 		if (target == null)
 			return;
 
@@ -253,28 +273,8 @@ public class Painter extends JComponent implements Scrollable {
 			return;
 
 		List<Line> relatedList = getAllLinks().stream().filter(e -> e.getFrom() == node || e.getTo() == node).collect(Collectors.toList());
-		Rectangle viewRect = getViewRect();
-		float minY = viewRect.y / ratio;
-		float maxY = (viewRect.y + viewRect.height) / ratio;
-		for (Line e : relatedList) {
-			Rectangle bounds = e.getBounds();
-			if (minY < bounds.y && bounds.y < maxY)
-				return;
-		}
-
 		Line line = relatedList.get(0);
-		Rectangle rect = line.getBounds();
-		int offsetY = (int) ((viewRect.y + viewRect.height - 40) / ratio);
-		if (rect.y >= offsetY - 20)
-			rect.y += 200;
-
-		if (rect.y < minY + Node.height + gap)
-			rect.y -= 100;
-
-		rect.x = node.getCenterX() - node.getWidth();
-		rect.width = node.getWidth() * 2;
-
-		scrollRectToVisible(getScaleRect(rect));
+		ensureLineVisible(line);
 	}
 
 	public Rectangle getScaleRect(Rectangle rect) {
@@ -559,6 +559,14 @@ public class Painter extends JComponent implements Scrollable {
 			g2d.setColor(new Color(255, 200, 0, 90));
 			g2d.fillRect(range.x + 1, range.y + 1, range.width - 2, range.height - 2);
 		}
+
+		// if (handler.getMovingPoint() != null) {
+		// Point p = handler.getMovingPoint();
+		// g2d.setColor(Color.red);
+		// g2d.drawString(p.toString(), p.x + 2, p.y - 2);
+		// g2d.drawLine(p.x, 0, p.x, getHeight());
+		// g2d.drawLine(0, p.y, getWidth(), p.y);
+		// }
 	}
 
 	public void highLights(String text) {

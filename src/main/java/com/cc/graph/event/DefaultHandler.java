@@ -48,7 +48,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 		} else if (code == KeyEvent.VK_DELETE) {
 			painter.removeElements(selection);
 		} else if (code == KeyEvent.VK_UP) {
-			if (selection.size() == 1 || selection.get(0).isLine()) {
+			if (selection.size() == 1 && selection.get(0).isLine()) {
 				Line line = (Line) selection.get(0);
 				Line target = painter.getAllLinks().stream().filter(o -> o.getOrder() < line.getOrder()).sorted((a, b) -> b.getOrder() - a.getOrder())
 						.findFirst().orElse(null);
@@ -60,7 +60,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				e.consume();
 			}
 		} else if (code == KeyEvent.VK_DOWN) {
-			if (selection.size() == 1 || selection.get(0).isLine()) {
+			if (selection.size() == 1 && selection.get(0).isLine()) {
 				Line line = (Line) selection.get(0);
 				Line target = painter.getAllLinks().stream().filter(o -> o.getOrder() > line.getOrder()).findFirst().orElse(null);
 				if (target != null) {
@@ -71,7 +71,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				e.consume();
 			}
 		} else if (code == KeyEvent.VK_LEFT) {
-			if (selection.size() == 1 || selection.get(0).isNode()) {
+			if (selection.size() == 1 && selection.get(0).isNode()) {
 				List<Node> nodes = painter.getAllNodes().stream().sorted((a, b) -> b.getOrder() - a.getOrder()).collect(Collectors.toList());
 
 				Node node = (Node) selection.get(0);
@@ -84,7 +84,7 @@ public class DefaultHandler extends MouseAdapter implements KeyListener {
 				e.consume();
 			}
 		} else if (code == KeyEvent.VK_RIGHT) {
-			if (selection.size() == 1 || selection.get(0).isNode()) {
+			if (selection.size() == 1 && selection.get(0).isNode()) {
 				List<Node> nodes = painter.getAllNodes().stream().sorted((a, b) -> a.getOrder() - b.getOrder()).collect(Collectors.toList());
 
 				Node node = (Node) selection.get(0);

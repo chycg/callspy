@@ -47,10 +47,10 @@ public class UIData {
 		Stack<Line> stack = new Stack<>();
 
 		for (Line line : allLinks) {
-			if (line.isSelfInvoke()) {
-				links.add(line);
-				continue;
-			}
+			// if (line.isSelfInvoke()) {
+			// links.add(line);
+			// continue;
+			// }
 
 			int level = line.getLevel();
 			if (stack.size() > 0 && level <= stack.peek().getLevel()) {

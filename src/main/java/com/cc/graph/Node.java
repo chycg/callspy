@@ -108,8 +108,8 @@ public class Node extends Element {
 		int gap = parent.getGap();
 		int h2 = getHeight();
 
-		g2d.drawRect(x, gap, w, h2 + 2);
-		g2d.setColor(new Color(240, 220, 150));
+		g2d.drawRect(x, gap, w, h2 + 1);
+		g2d.setColor(new Color(240, 220, 200));
 		g2d.fillRect(x + 1, gap + 1, w - 2, h2);
 		paintText(g2d, getName(), x + Node.gap, gap + Node.gap + g2d.getFontMetrics().getAscent());
 	}

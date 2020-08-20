@@ -217,19 +217,31 @@ public class Line extends Element {
 		if (super.isContain(point))
 			return true;
 
-		if (from == to) {
-			int sx = from.getCenterX();
-			int sy = getY();
-
-			return new Rectangle(sx, sy - 20, textWidth, rectH).contains(point);
-		}
+		// if (from == to) {
+		// int sx = from.getCenterX();
+		// int sy = getY();
+		//
+		// return new Rectangle(sx, sy - 20, textWidth, rectH).contains(point);
+		// }
 
 		return entryLine != null && entryLine.getBounds().contains(point) || exitLine != null && exitLine.getBounds().contains(point);
 	}
 
 	@Override
+	public Rectangle getTextBounds() {
+		if (isSelfInvoke())
+			return getBounds();
+
+		int x = Math.min(from.getCenterX(), to.getCenterX());
+		int y = getY();
+		int width = textWidth + 100;
+
+		return new Rectangle(x, y, width, rectH);
+	}
+
+	@Override
 	public Rectangle getBounds() {
-		if (from == to) {
+		if (isSelfInvoke()) {
 			int sx = from.getCenterX();
 			int sy = getY();
 

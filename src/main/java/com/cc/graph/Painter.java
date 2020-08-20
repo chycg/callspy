@@ -231,12 +231,12 @@ public class Painter extends JComponent implements Scrollable {
 	 * @param target
 	 */
 	public void ensureVisible(Element target) {
-		Rectangle rect = target.getBounds();
+		Rectangle rect = target.getTextBounds();
 		Rectangle viewRect = getViewRect();
 		if (viewRect.y + viewRect.getHeight() - rect.y < 100)
 			rect.height += 100;
 
-		scrollRectToVisible(rect);
+		scrollRectToVisible(getScaleRect(rect));
 	}
 
 	public void ensureLineVisible(Element target) {
@@ -274,7 +274,16 @@ public class Painter extends JComponent implements Scrollable {
 		rect.x = node.getCenterX() - node.getWidth();
 		rect.width = node.getWidth() * 2;
 
-		scrollRectToVisible(rect);
+		scrollRectToVisible(getScaleRect(rect));
+	}
+
+	public Rectangle getScaleRect(Rectangle rect) {
+		int x = (int) (rect.x / ratio);
+		int y = (int) (rect.y / ratio);
+		int w = (int) (rect.width / ratio);
+		int h = (int) (rect.height / ratio);
+
+		return new Rectangle(x, y, w, h);
 	}
 
 	public void removeElements(Collection<? extends Element> c) {
@@ -336,6 +345,9 @@ public class Painter extends JComponent implements Scrollable {
 
 	private void doRemoveLine(Line line, Set<Element> set) {
 		remove0(line);
+		// if (line.isSelfInvoke())
+		// return;
+
 		Set<Line> betweenLines = getBetweenLines(line);
 		for (Line e : betweenLines) {
 			set.add(e);

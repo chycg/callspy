@@ -38,6 +38,10 @@ public abstract class Element implements Serializable, Comparable<Element> {
 
 	public abstract Rectangle getBounds();
 
+	public Rectangle getTextBounds() {
+		return getBounds();
+	}
+
 	public abstract ElementType getType();
 
 	protected void paintText(Graphics2D g2d, String text, int x, int y) {

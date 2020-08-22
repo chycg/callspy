@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -83,6 +85,8 @@ public class MainFrame extends JFrame {
 	private int nodeCount = 0;
 
 	private String title;
+
+	private Map<Integer, DefaultMutableTreeNode> treeMap = new HashMap<>();
 
 	private AbstractAction copyAction = new AbstractAction("copy") {
 
@@ -166,9 +170,12 @@ public class MainFrame extends JFrame {
 	// if (node == null)
 	// return;
 	//
-	// DefaultMutableTreeNode target = findTarget(node, null);
-	// removeTreeNode(node, null, MatchType.NONE);
+	// Invocation data = (Invocation) node.getUserObject();
+	// if (data != null) {
+	// DefaultMutableTreeNode target = findTarget(node, data.getMethod());
+	// removeTreeNode(node, null, MatchType.SINGLE);
 	// tree.setSelectionPath(new TreePath(target.getPath()));
+	// }
 	// }
 	// };
 
@@ -178,11 +185,21 @@ public class MainFrame extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			Object source = e.getSource();
-			if (source instanceof String) {
-				removeTreeNode(root, (String) source, MatchType.METHOD);
-				return;
+			Integer targetId = e.getID();
+			if (targetId > 0) {
+				DefaultMutableTreeNode node = treeMap.get(targetId);
+				if (node != null) {
+					model.removeNodeFromParent(node);
+					treeMap.remove(targetId);
+					return;
+				}
 			}
+
+			// Object source = e.getSource();
+			// if (source instanceof String) {
+			// removeTreeNode(root, (String) source, MatchType.METHOD);
+			// return;
+			// }
 
 			TreePath path = tree.getSelectionPath();
 			if (path == null)
@@ -193,11 +210,16 @@ public class MainFrame extends JFrame {
 				return;
 
 			Invocation data = (Invocation) node.getUserObject();
-			if (data != null) {
-				DefaultMutableTreeNode target = findTarget(node, data.getMethod());
-				removeTreeNode(root, data.getMethodName(), MatchType.METHOD);
-				tree.setSelectionPath(new TreePath(target.getPath()));
+			if (node.getChildCount() > 0) {
+				model.removeNodeFromParent(node);
+				treeMap.remove(data.getId());
+				return;
 			}
+
+			// same simple method
+			DefaultMutableTreeNode target = findTarget(node, data.getMethod());
+			removeTreeNode(root, data.getMethodName(), MatchType.METHOD);
+			tree.setSelectionPath(new TreePath(target.getPath()));
 		}
 	};
 
@@ -448,7 +470,7 @@ public class MainFrame extends JFrame {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-					removeMethodAction.actionPerformed(new ActionEvent(e.getSource(), e.getID(), "deleteMethod"));
+					removeMethodAction.actionPerformed(new ActionEvent(e.getSource(), 0, "deleteMethod"));
 				} else if (e.getKeyCode() == KeyEvent.VK_0 && e.getModifiers() == InputEvent.CTRL_MASK) {
 					renderer.resetFontSize();
 				}
@@ -478,6 +500,7 @@ public class MainFrame extends JFrame {
 
 		painter.addDataChangeListener(e -> {
 			int type = e.getEventType();
+			Integer targetId = e.getTargetId();
 			if (type == DataChangeEvent.REMOVE) {
 				Collection<? extends Element> targets = e.getElements();
 				for (Element c : targets) {
@@ -485,7 +508,7 @@ public class MainFrame extends JFrame {
 						ActionEvent event1 = new ActionEvent(c.getName(), c.getId(), "deleteClass");
 						removeClassAction.actionPerformed(event1);
 					} else if (c.isLine()) {
-						ActionEvent event2 = new ActionEvent(c.getName(), c.getId(), "deleteMethod");
+						ActionEvent event2 = new ActionEvent(c.getName(), targetId, "deleteMethod");
 						removeMethodAction.actionPerformed(event2);
 					}
 				}
@@ -546,13 +569,12 @@ public class MainFrame extends JFrame {
 		model.insertNodeInto(node, parentNode, index);
 		nodeCount++;
 
-		if (parentNode == root)
-			return;
-
-		Invocation source = (Invocation) parentNode.getUserObject();
-		String srcClzName = source.getClassName();
 		Invocation invoke = (Invocation) node.getUserObject();
-		painter.addLine(srcClzName, invoke.getClassName(), invoke.getMethodName(), invoke);
+		Invocation source = parentNode == root ? invoke : (Invocation) parentNode.getUserObject();
+		String srcClzName = source.getClassName();
+		painter.addLine(srcClzName, invoke);
+
+		treeMap.put(invoke.getId(), node);
 	}
 
 	private void deleteNode(DefaultMutableTreeNode node) {
@@ -561,7 +583,9 @@ public class MainFrame extends JFrame {
 
 		if (node.getUserObject() instanceof Invocation) {
 			Invocation invoke = (Invocation) node.getUserObject();
-			painter.removeLine(invoke.getClassName(), invoke.getMethodName(), invoke);
+			treeMap.remove(invoke.getId());
+
+			painter.removeLine(invoke);
 		}
 
 		setTitle(title + " - rows: " + nodeCount);
@@ -641,7 +665,8 @@ public class MainFrame extends JFrame {
 		if (result != null)
 			line += result;
 
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(new Invocation(line, count, mod));
+		Invocation invoke = new Invocation(line, count, mod);
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(invoke);
 
 		if (count < lastCount) {
 			parentNode = (DefaultMutableTreeNode) parentNode.getParent();

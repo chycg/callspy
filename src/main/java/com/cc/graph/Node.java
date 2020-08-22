@@ -105,18 +105,17 @@ public class Node extends Element {
 		g2d.setColor(Color.black);
 		g2d.setStroke(new BasicStroke(isSelected() ? 1.5f : 1.1f));
 		int w = getWidth(g2d);
-		int gap = parent.getGap();
 		int h2 = getHeight();
 
-		g2d.drawRect(x, gap, w, h2 + 1);
+		g2d.drawRect(x, 0, w, h2 + 1);
 		g2d.setColor(new Color(240, 220, 200));
-		g2d.fillRect(x + 1, gap + 1, w - 2, h2);
-		paintText(g2d, getName(), x + Node.gap, gap + Node.gap + g2d.getFontMetrics().getAscent());
+		g2d.fillRect(x + 1, 1, w - 2, h2);
+		paintText(g2d, getName(), x + Node.gap, Node.gap + g2d.getFontMetrics().getAscent());
 	}
 
 	@Override
 	public Rectangle getBounds() {
-		Rectangle rect = parent.getViewRect();
+		Rectangle rect = getViewRect();
 		return new Rectangle(x, rect.y + parent.getGap(), width, height);
 	}
 
@@ -131,9 +130,16 @@ public class Node extends Element {
 			return true;
 
 		Rectangle rect = getBounds();
-		Rectangle viewRect = parent.getViewRect();
+		Rectangle viewRect = getViewRect();
 		rect.y = viewRect.y + viewRect.height - getHeight() - parent.getGap();
 
 		return rect.contains(point);
 	}
+
+	@Override
+	public boolean isFullShowing() {
+		Rectangle rect = getViewRect();
+		return rect.x < x && rect.x + rect.width > x + width + parent.getGap();
+	}
+
 }

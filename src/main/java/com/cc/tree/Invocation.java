@@ -1,12 +1,17 @@
 package com.cc.tree;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.cc.Utils;
 
 public class Invocation implements Serializable {
 
 	private static final long serialVersionUID = 3358434219949751004L;
+
+	private static final AtomicInteger idMaker = new AtomicInteger(1);
+
+	private final Integer id;
 
 	private final int count;
 
@@ -18,7 +23,8 @@ public class Invocation implements Serializable {
 
 	private String result;
 
-	public Invocation(String line, int count,int mod) {
+	public Invocation(String line, int count, int mod) {
+		this.id = idMaker.getAndIncrement();
 		this.line = line.trim();
 		this.count = count;
 		this.method = line.substring(0, line.indexOf("("));
@@ -57,6 +63,10 @@ public class Invocation implements Serializable {
 		return result != null;
 	}
 
+	public String getResult() {
+		return result;
+	}
+
 	public String getLine() {
 		return line;
 	}
@@ -67,6 +77,10 @@ public class Invocation implements Serializable {
 
 	public int getMod() {
 		return mod;
+	}
+
+	public Integer getId() {
+		return id;
 	}
 
 	public boolean isResult(String line) {

@@ -83,11 +83,11 @@ public class Painter extends JComponent implements Scrollable {
 			selectionListeners.remove(listener);
 	}
 
-	public void fireDataChangeEvent(int eventType, Collection<? extends Element> target) {
+	public void fireDataChangeEvent(int eventType, Integer targetId, Collection<? extends Element> target) {
 		if (!popupEvent)
 			return;
 
-		DataChangeEvent e = new DataChangeEvent(this, eventType, target);
+		DataChangeEvent e = new DataChangeEvent(this, eventType, targetId, target);
 		for (DataChangeListener listener : dataChangeListeners) {
 			listener.dataChanged(e);
 		}
@@ -219,7 +219,7 @@ public class Painter extends JComponent implements Scrollable {
 		if (isolatedSet.isEmpty())
 			return;
 
-		fireDataChangeEvent(DataChangeEvent.REMOVE, isolatedSet);
+		fireDataChangeEvent(DataChangeEvent.REMOVE, 0, isolatedSet);
 		removeElements(isolatedSet);
 	}
 
@@ -243,11 +243,21 @@ public class Painter extends JComponent implements Scrollable {
 		scrollRectToVisible(getScaleRect(rect));
 	}
 
+	/**
+	 * 出入线已显示、无法完整显示、不做移动
+	 * 
+	 * @param line
+	 */
 	private void ensureLineVisible(Line line) {
-		Rectangle rect0 = line.getTextBounds();
+		Rectangle viewRect = getViewRect();
+		Rectangle rect0 = line.getBounds();
 		Rectangle rect1 = line.getExitLine() != null ? line.getExitLine().getTextBounds() : line.getEntryLine().getTextBounds();
 
 		Rectangle rect = new Rectangle(rect0);
+		rect.add(rect1);
+		if (viewRect.contains(rect) || rect.width > viewRect.width || rect.height > viewRect.height)
+			return;
+
 		rect.y = Math.min(rect0.y, rect1.y) - 50;
 		rect.height = Math.abs(rect0.y - rect1.y) + 120;
 
@@ -301,6 +311,7 @@ public class Painter extends JComponent implements Scrollable {
 		Set<Element> targets = new HashSet<>();
 		targets.add(element);
 
+		Integer targetId = 0;
 		if (element.isNode()) {
 			String className = element.getName();
 			if (!nodes.containsKey(className))
@@ -309,26 +320,26 @@ public class Painter extends JComponent implements Scrollable {
 			remove0(element);
 			Set<Line> fromLines = links.values().stream().filter(e -> e.getFrom() == element).collect(Collectors.toSet());
 			Set<Line> toLines = links.values().stream().filter(e -> e.getTo() == element).collect(Collectors.toSet());
-			remove0(toLines);
+			remove0(toLines); // to lines 直接删除不递归
 
-			Set<Element> set = removeLines(fromLines);
-
-			targets.addAll(set);
-			targets.addAll(toLines);
+			removeLines(fromLines); // from lines 递归删除
 		} else if (element.isLine()) {
 			Line line = (Line) element;
+			targetId = line.getId();
 			Set<Element> set = new HashSet<>();
 			doRemoveLine(line, set);
 
 			Node from = line.getFrom();
 			String text = line.getName();
-			Set<Line> sameMethods = links.values().stream().filter(e -> e.getFrom() == from && e.getName().equals(text)).collect(Collectors.toSet());
+			Set<Line> sameMethods = links.values().stream()
+					.filter(e -> e.getFrom() == from && e.getName().equals(text) && e.getOrder() - e.getExitLine().getOrder() == 1)
+					.collect(Collectors.toSet());
 			set.addAll(removeLines(sameMethods));
 
 			targets.addAll(set);
 		}
 
-		fireDataChangeEvent(DataChangeEvent.REMOVE, targets);
+		fireDataChangeEvent(DataChangeEvent.REMOVE, targetId, targets);
 	}
 
 	private Set<Element> removeLines(Collection<Line> lines) {
@@ -345,9 +356,6 @@ public class Painter extends JComponent implements Scrollable {
 
 	private void doRemoveLine(Line line, Set<Element> set) {
 		remove0(line);
-		// if (line.isSelfInvoke())
-		// return;
-
 		Set<Line> betweenLines = getBetweenLines(line);
 		for (Line e : betweenLines) {
 			set.add(e);
@@ -416,7 +424,7 @@ public class Painter extends JComponent implements Scrollable {
 			for (int i = 0; i < count; i++) {
 				DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
 				Invocation invoke = (Invocation) child.getUserObject();
-				addLine(className, invoke.getClassName(), invoke.getMethodName(), invoke);
+				addLine(className, invoke);
 				init(child);
 			}
 		} else {
@@ -431,12 +439,11 @@ public class Painter extends JComponent implements Scrollable {
 		return new ArrayList<>(selection);
 	}
 
-	public void removeLine(String className, String methodName, Invocation invocation) {
+	public void removeLine(Invocation invocation) {
 		popupEvent = false;
 		List<Line> allLinks = getAllLinks();
-		Set<Line> lines = allLinks.stream()
-				.filter(e -> e.getTo().getName().endsWith(className) && e.getName().equals(methodName) && invocation == e.getInvoke())
-				.collect(Collectors.toSet());
+		Set<Line> lines = allLinks.stream().filter(e -> e.getTo().getName().endsWith(invocation.getClassName())
+				&& e.getName().equals(invocation.getMethodName()) && invocation == e.getInvoke()).collect(Collectors.toSet());
 
 		if (lines.size() > 0)
 			removeElements(lines);
@@ -444,7 +451,9 @@ public class Painter extends JComponent implements Scrollable {
 		popupEvent = true;
 	}
 
-	public Line addLine(String from, String to, String method, Invocation invocation) {
+	public Line addLine(String from, Invocation invocation) {
+		String to = invocation.getClassName();
+		String method = invocation.getMethodName();
 		List<Element> targets = new ArrayList<>();
 		if (!nodes.containsKey(from)) {
 			Node fromNode = new Node(from, nodes.size(), this);
@@ -470,14 +479,14 @@ public class Painter extends JComponent implements Scrollable {
 			}
 		}
 
-		lastLine = new Line(fromNode, toNode, method, links.size());
+		lastLine = new Line(invocation.getId(), fromNode, toNode, method, links.size());
 		lastLine.setInvoke(invocation);
 		lastLine.setMod(invocation.getMod());
 
 		links.put(lastLine.getId(), lastLine);
 		targets.add(lastLine);
 
-		fireDataChangeEvent(DataChangeEvent.ADD, targets);
+		// fireDataChangeEvent(DataChangeEvent.ADD, targets);
 
 		return lastLine;
 	}
@@ -506,9 +515,9 @@ public class Painter extends JComponent implements Scrollable {
 		UIData data = computeSize();
 		Rectangle rect = getViewRect();
 
-		int top = (int) (rect.y / ratio);
+		int top = (int) (rect.y / ratio) + gap;
 		int rangeH = Math.min(rect.y + rect.height, getHeight());
-		int bottom = (int) (rangeH / ratio - Node.height - gap * 2);
+		int bottom = (int) (rangeH / ratio - Node.height - gap);
 		int left = (int) (rect.x / ratio);
 		int right = (int) ((rect.x + rect.width) / ratio) - 40;
 
@@ -527,7 +536,7 @@ public class Painter extends JComponent implements Scrollable {
 
 			g2d.setStroke(stroke);
 			g2d.setColor(node.isSelected() ? Color.black : Color.lightGray);
-			g2d.drawLine(node.getCenterX(), top + gap + node.getHeight(), node.getCenterX(), bottom + gap);
+			g2d.drawLine(node.getCenterX(), top + node.getHeight(), node.getCenterX(), bottom + gap);
 
 			g2d.setColor(Color.cyan.darker());
 			int counterY = (int) ((rect.y + rect.height / 2) / ratio) / 50 * 50;
@@ -539,9 +548,9 @@ public class Painter extends JComponent implements Scrollable {
 			g2d.translate(0, -bottom);
 		}
 
-		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
+		g2d.setFont(new Font("Dialog", Font.BOLD, 13));
 		for (Line line : data.getLinks()) {
-			if (line.getY() < top + Node.height + gap + fontHeight - 1)
+			if (line.getY() < top + Node.height + fontHeight - 1)
 				continue;
 
 			if (line.getY() > bottom)

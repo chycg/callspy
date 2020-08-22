@@ -17,8 +17,11 @@ public class DataChangeEvent extends EventObject {
 
 	private int eventType;
 
-	public DataChangeEvent(Object source, int eventType, Collection<? extends Element> targets) {
+	private Integer targetId = 0;
+
+	public DataChangeEvent(Object source, int eventType, Integer targetId, Collection<? extends Element> targets) {
 		super(source);
+		this.targetId = targetId;
 		this.eventType = eventType;
 		this.elements = targets;
 	}
@@ -27,15 +30,11 @@ public class DataChangeEvent extends EventObject {
 		return eventType;
 	}
 
-	public void setEventType(int eventType) {
-		this.eventType = eventType;
+	public Integer getTargetId() {
+		return targetId;
 	}
 
 	public Collection<? extends Element> getElements() {
 		return elements;
-	}
-
-	public void setElements(Collection<? extends Element> elements) {
-		this.elements = elements;
 	}
 }

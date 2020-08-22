@@ -2,6 +2,7 @@ package com.cc.graph;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -15,6 +16,9 @@ public class Line extends Element {
 
 	public static final int rectW = 50;
 	public static final int rectH = 18;
+
+	private static String upArrow = "↑";
+	private static String downArrow = "↓";
 
 	private final Node from;
 
@@ -46,7 +50,7 @@ public class Line extends Element {
 	}
 
 	public Line makeExitLine() {
-		Line newLine = new Line(to, from, getName(), 0);
+		Line newLine = new Line(-1 * getId(), to, from, getName(), 0);
 		newLine.selected = selected;
 		newLine.mod = mod;
 
@@ -77,7 +81,13 @@ public class Line extends Element {
 	}
 
 	public String getMethod() {
-		return repeatCount == 1 ? getName() : getName() + " *" + repeatCount;
+		// boolean fullShow = from.isFullShowing() && to.isFullShowing();
+		String name = to.getName() + "." + getName();
+		// if (!fullShow || !isSelfInvoke()) {
+		// name = to.getName() + "." + name;
+		// }
+
+		return repeatCount == 1 ? name : name + " *" + repeatCount;
 	}
 
 	public Line getEntryLine() {
@@ -146,17 +156,29 @@ public class Line extends Element {
 		return from == to;
 	}
 
+	public boolean isL2R() {
+		return from.getOrder() < to.getOrder();
+	}
+
+	public boolean isR2L() {
+		return from.getOrder() > to.getOrder();
+	}
+
+	private String getContent() {
+		int preIndex = isExitLine() ? entryLine.getIndex() : getIndex();
+		String content = preIndex + ": " + getMethod();
+		return content;
+	}
+
 	@Override
 	public void paint(Graphics2D g2d) {
-		Node from = getFrom();
-		Node to = getTo();
 		int angleWidth = 6;
 		int angleWidth2 = angleWidth / 2;
 
 		int sx = from.getCenterX();
 		int tx = to.getCenterX();
 		int sy = getY();
-		String content = (isExitLine() ? entryLine.getIndex() : getIndex()) + ": " + getMethod();
+		String content = getContent();
 
 		if (isExitLine()) {
 			g2d.setStroke(new BasicStroke(isSelected() ? 1.2f : 1f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND, 2f, new float[] { 5, 4 }, 0f));
@@ -169,15 +191,15 @@ public class Line extends Element {
 		textWidth = getStrWidth(g2d, content);
 		int textY = g2d.getFontMetrics().getDescent();
 
-		if (from.getOrder() < to.getOrder()) {
+		if (isL2R()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx - angleWidth, sy + angleWidth2);
 
 			paintText(g2d, content, sx + 10, sy - textY);
-			if (tx - sx > 600)
+			if (tx - sx > 600 && tx - sx > 2 * textWidth)
 				paintText(g2d, content, tx - textWidth - 10, sy - textY);
-		} else if (from.getOrder() > to.getOrder()) {
+		} else if (isR2L()) {
 			g2d.drawLine(sx, sy, tx, sy);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy - angleWidth2);
 			g2d.drawLine(tx, sy, tx + angleWidth, sy + angleWidth2);
@@ -190,7 +212,7 @@ public class Line extends Element {
 
 			paintText(g2d, content, leftX, sy - textY);
 
-			if (sx - tx > 600)
+			if (sx - tx > 600 && sx - tx > 2 * textWidth)
 				paintText(g2d, content, tx + 10, sy - textY);
 		} else if (isSelfInvoke()) {
 			int offsetX = 5;
@@ -203,6 +225,69 @@ public class Line extends Element {
 			g2d.drawLine(sx, sy + rectH, sx + angleWidth, sy + rectH + angleWidth2);
 
 			paintText(g2d, content, sx + 10, sy - textY);
+		}
+
+		// paintSideNode(g2d);
+
+		paintExtraText(g2d);
+
+		paintArgs(g2d);
+	}
+
+	private void paintSideNode(Graphics2D g2d) {
+		boolean fullShow = from.isFullShowing() && to.isFullShowing();
+		if (isSelfInvoke() || fullShow)
+			return;
+
+		Rectangle viewRect = getViewRect();
+		int leftX = viewRect.x + parent.getGap() - from.getX();
+		int rightX = viewRect.x + viewRect.width - parent.getGap() - from.getWidth() - to.getX();
+		int y = getY() - g2d.getFontMetrics().getAscent();
+
+		if (!from.isFullShowing()) {
+			int x = isL2R() ? leftX : rightX;
+			g2d.translate(x, y);
+			from.paint(g2d);
+			g2d.translate(-x, -y);
+		}
+
+		if (!to.isFullShowing()) {
+			int x = isL2R() ? rightX : leftX;
+			g2d.translate(x, y);
+			to.paint(g2d);
+			g2d.translate(-x, -y);
+		}
+	}
+
+	private void paintArgs(Graphics2D g2d) {
+		if (!isSelected())
+			return;
+
+		Invocation invoke = isEntryLine() ? getInvoke() : entryLine.getInvoke();
+		int x = isEntryLine() ? from.getCenterX() : to.getCenterX();
+		int y = getY() - g2d.getFontMetrics().getAscent() - g2d.getFontMetrics().getDescent();
+
+		g2d.setColor(new Color(150, 150, 150));
+		g2d.setFont(new Font("Verdana", Font.BOLD, 13));
+
+		g2d.drawString(invoke.getLine(), x + 10, y);
+	}
+
+	private void paintExtraText(Graphics2D g2d) {
+		int vx = getViewRect().x;
+		int vw = getViewRect().width;
+		int sy = getY();
+		int textY = g2d.getFontMetrics().getDescent();
+
+		if (!from.isFullShowing() && !to.isFullShowing()) {
+			Color color = isSelected() ? Color.red : isEntryLine() ? new Color(50, 70, 80) : new Color(120, 67, 200);
+			g2d.setColor(color);
+			g2d.setFont(new Font("dialog", Font.BOLD, 13));
+			String text = getContent();
+			int strWidth = getStrWidth(g2d, text);
+			String arrow = isEntryLine() ? downArrow : upArrow;
+
+			g2d.drawString(text + arrow, vx + (vw - strWidth) / 2 - 10, sy - textY);
 		}
 	}
 
@@ -258,5 +343,4 @@ public class Line extends Element {
 
 		return new Rectangle(x - 2, y - 15, width + 4, 20);
 	}
-
 }

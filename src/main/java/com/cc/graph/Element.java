@@ -74,8 +74,21 @@ public abstract class Element implements Serializable, Comparable<Element> {
 		return getType() == ElementType.LINE;
 	}
 
+	/**
+	 * 在当前rectview中是否完全显示
+	 * 
+	 * @return
+	 */
+	public boolean isFullShowing() {
+		return getViewRect().contains(getBounds());
+	}
+
 	public Painter getParent() {
 		return parent;
+	}
+
+	public Rectangle getViewRect() {
+		return parent.getViewRect();
 	}
 
 	public int getId() {

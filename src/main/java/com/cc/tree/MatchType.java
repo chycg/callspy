@@ -2,13 +2,15 @@ package com.cc.tree;
 
 public enum MatchType {
 
-	ALL,
+	SINGLE,
 
 	METHOD,
 
 	CLASS,
 
-	PACKAGE;
+	PACKAGE,
+
+	ALL;
 
 	public boolean isClass() {
 		return this == CLASS;

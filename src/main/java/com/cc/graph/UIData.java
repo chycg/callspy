@@ -89,10 +89,23 @@ public class UIData {
 
 	private void computeNodes() {
 		nodes.removeIf(e -> e.getFromCount() == 0 && e.getToCount() == 0);
+		if (nodes.isEmpty())
+			return;
+
 		int offsetX = 20;
 		for (Node node : nodes) {
 			node.setX(offsetX);
 			offsetX += node.getWidth(g2d) + 20;
+		}
+
+		Node last = nodes.get(nodes.size() - 1);
+
+		List<String> methods = links.stream().filter(e -> e.getFrom() == last && e.isSelfInvoke() && e.getInvoke() != null).map(e -> e.getMethod())
+				.sorted((a, b) -> a.length() - b.length()).collect(Collectors.toList());
+
+		if (methods.size() > 0) {
+			String longText = methods.get(methods.size() - 1);
+			offsetX += g2d.getFontMetrics().stringWidth(longText);
 		}
 
 		this.width = offsetX;
@@ -108,7 +121,7 @@ public class UIData {
 	}
 
 	public int getHeight() {
-		return links.isEmpty() ? 100 : links.size() * 50 + (Node.height + painter.getGap()) * 2;
+		return links.isEmpty() ? 100 : links.size() * 50 + Line.gap + (Node.height + painter.getGap()) * 2;
 	}
 
 	/**

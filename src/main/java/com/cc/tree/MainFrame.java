@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -187,19 +188,9 @@ public class MainFrame extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			Integer targetId = e.getID();
 			if (targetId > 0) {
-				DefaultMutableTreeNode node = treeMap.get(targetId);
-				if (node != null) {
-					model.removeNodeFromParent(node);
-					treeMap.remove(targetId);
-					return;
-				}
+				doRemove(targetId);
+				return;
 			}
-
-			// Object source = e.getSource();
-			// if (source instanceof String) {
-			// removeTreeNode(root, (String) source, MatchType.METHOD);
-			// return;
-			// }
 
 			TreePath path = tree.getSelectionPath();
 			if (path == null)
@@ -210,16 +201,41 @@ public class MainFrame extends JFrame {
 				return;
 
 			Invocation data = (Invocation) node.getUserObject();
-			if (node.getChildCount() > 0) {
-				model.removeNodeFromParent(node);
-				treeMap.remove(data.getId());
+			if (node.getChildCount() > 0) { // 删除当前方法以及下级节点，同名方法不处理
+				doRemove(data.getId());
 				return;
 			}
 
-			// same simple method
+			// 同名简单方法按方法匹配批量删除
 			DefaultMutableTreeNode target = findTarget(node, data.getMethod());
 			removeTreeNode(root, data.getMethodName(), MatchType.METHOD);
 			tree.setSelectionPath(new TreePath(target.getPath()));
+		}
+
+		private void doRemove(Integer targetId) {
+			DefaultMutableTreeNode node = treeMap.get(targetId);
+			if (node == null)
+				return;
+
+			AtomicInteger count = new AtomicInteger(1);
+			computeNodeSize(node, count);
+
+			model.removeNodeFromParent(node);
+			treeMap.remove(targetId);
+			nodeCount -= count.get();
+
+			setTitle(title + " - rows: " + nodeCount);
+		}
+
+		private void computeNodeSize(DefaultMutableTreeNode parent, AtomicInteger count) {
+			if (parent == null)
+				return;
+
+			count.addAndGet(parent.getChildCount());
+			for (int i = 0; i < parent.getChildCount(); i++) {
+				DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
+				computeNodeSize(child, count);
+			}
 		}
 	};
 
@@ -505,7 +521,7 @@ public class MainFrame extends JFrame {
 				Collection<? extends Element> targets = e.getElements();
 				for (Element c : targets) {
 					if (c.isNode()) {
-						ActionEvent event1 = new ActionEvent(c.getName(), c.getId(), "deleteClass");
+						ActionEvent event1 = new ActionEvent(c.getName(), 0, "deleteClass");
 						removeClassAction.actionPerformed(event1);
 					} else if (c.isLine()) {
 						ActionEvent event2 = new ActionEvent(c.getName(), targetId, "deleteMethod");

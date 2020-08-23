@@ -55,7 +55,7 @@ public class Painter extends JComponent implements Scrollable {
 
 	private boolean popupEvent = true;
 
-	private int gap = 10;
+	private int gap = 15;
 
 	private UIData uiData;
 
@@ -380,18 +380,32 @@ public class Painter extends JComponent implements Scrollable {
 				Line line = (Line) e;
 				links.remove(e.getId());
 
-				line.getFrom().decreaseFromCount();
-				line.getTo().decreaseToCount();
+				Node from = line.getFrom();
+				Node to = line.getTo();
 
-				if (line.getFrom().isIsolated())
-					remove0(line.getFrom());
+				from.decreaseFromCount();
+				to.decreaseToCount();
 
-				if (line.getTo().isIsolated())
-					remove0(line.getTo());
+				if (hasNode(from) && from.isIsolated()) {
+					remove0(from);
+					fireDataChangeEvent(DataChangeEvent.REMOVE, null, Arrays.asList(from));
+				}
+
+				if (hasNode(to) && to.isIsolated()) {
+					remove0(to);
+					fireDataChangeEvent(DataChangeEvent.REMOVE, null, Arrays.asList(to));
+				}
 			} else {
 				nodes.remove(e.getName());
 			}
 		}
+	}
+
+	private boolean hasNode(Node node) {
+		if (node == null)
+			return false;
+
+		return nodes.containsKey(node.getName());
 	}
 
 	private Set<Line> getBetweenLines(Line target) {
@@ -486,8 +500,6 @@ public class Painter extends JComponent implements Scrollable {
 		links.put(lastLine.getId(), lastLine);
 		targets.add(lastLine);
 
-		// fireDataChangeEvent(DataChangeEvent.ADD, targets);
-
 		return lastLine;
 	}
 
@@ -539,8 +551,7 @@ public class Painter extends JComponent implements Scrollable {
 			g2d.drawLine(node.getCenterX(), top + node.getHeight(), node.getCenterX(), bottom + gap);
 
 			g2d.setColor(Color.cyan.darker());
-			int counterY = (int) ((rect.y + rect.height / 2) / ratio) / 50 * 50;
-			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, counterY - fontHeight + 3);
+			g2d.drawString(node.getCounter(), node.getCenterX() - String.valueOf(node.getFromCount()).length() * 10 - 1, top - 2);
 
 			// bottom class
 			g2d.translate(0, bottom);
@@ -550,8 +561,9 @@ public class Painter extends JComponent implements Scrollable {
 
 		g2d.setFont(new Font("Dialog", Font.BOLD, 13));
 		for (Line line : data.getLinks()) {
-			if (line.getY() < top + Node.height + fontHeight - 1)
+			if (line.getY() < top + Node.height + fontHeight) {
 				continue;
+			}
 
 			if (line.getY() > bottom)
 				break;

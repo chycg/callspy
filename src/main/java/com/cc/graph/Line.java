@@ -17,6 +17,8 @@ public class Line extends Element {
 	public static final int rectW = 50;
 	public static final int rectH = 18;
 
+	public static final int gap = 20;
+
 	private static String upArrow = "↑";
 	private static String downArrow = "↓";
 
@@ -149,7 +151,7 @@ public class Line extends Element {
 	}
 
 	public int getY() {
-		return getOrder() * 50;
+		return getOrder() * 50 + gap;
 	}
 
 	public boolean isSelfInvoke() {
@@ -234,30 +236,30 @@ public class Line extends Element {
 		paintArgs(g2d);
 	}
 
-	private void paintSideNode(Graphics2D g2d) {
-		boolean fullShow = from.isFullShowing() && to.isFullShowing();
-		if (isSelfInvoke() || fullShow)
-			return;
-
-		Rectangle viewRect = getViewRect();
-		int leftX = viewRect.x + parent.getGap() - from.getX();
-		int rightX = viewRect.x + viewRect.width - parent.getGap() - from.getWidth() - to.getX();
-		int y = getY() - g2d.getFontMetrics().getAscent();
-
-		if (!from.isFullShowing()) {
-			int x = isL2R() ? leftX : rightX;
-			g2d.translate(x, y);
-			from.paint(g2d);
-			g2d.translate(-x, -y);
-		}
-
-		if (!to.isFullShowing()) {
-			int x = isL2R() ? rightX : leftX;
-			g2d.translate(x, y);
-			to.paint(g2d);
-			g2d.translate(-x, -y);
-		}
-	}
+	// private void paintSideNode(Graphics2D g2d) {
+	// boolean fullShow = from.isFullShowing() && to.isFullShowing();
+	// if (isSelfInvoke() || fullShow)
+	// return;
+	//
+	// Rectangle viewRect = getViewRect();
+	// int leftX = viewRect.x + parent.getGap() - from.getX();
+	// int rightX = viewRect.x + viewRect.width - parent.getGap() - from.getWidth() - to.getX();
+	// int y = getY() - g2d.getFontMetrics().getAscent();
+	//
+	// if (!from.isFullShowing()) {
+	// int x = isL2R() ? leftX : rightX;
+	// g2d.translate(x, y);
+	// from.paint(g2d);
+	// g2d.translate(-x, -y);
+	// }
+	//
+	// if (!to.isFullShowing()) {
+	// int x = isL2R() ? rightX : leftX;
+	// g2d.translate(x, y);
+	// to.paint(g2d);
+	// g2d.translate(-x, -y);
+	// }
+	// }
 
 	private void paintArgs(Graphics2D g2d) {
 		if (!isSelected())

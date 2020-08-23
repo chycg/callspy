@@ -14,10 +14,14 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseWheelEvent;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -302,6 +306,16 @@ public class MainFrame extends JFrame {
 		}
 	};
 
+	private AbstractAction exportTreeAction = new AbstractAction("exportTreeData") {
+
+		private static final long serialVersionUID = 7398038743300735101L;
+
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			exportTreeData();
+		}
+	};
+
 	public MainFrame() {
 		this(null);
 	}
@@ -447,6 +461,8 @@ public class MainFrame extends JFrame {
 		popup.add(new JMenuItem(copyMethodAction));
 		popup.addSeparator();
 		popup.add(new JCheckBoxMenuItem(topWindowAction));
+		popup.addSeparator();
+		popup.add(new JMenuItem(exportTreeAction));
 
 		tree.setComponentPopupMenu(popup);
 
@@ -665,6 +681,48 @@ public class MainFrame extends JFrame {
 		}.execute();
 	}
 
+	private void exportTreeData() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+		fileChooser.setDialogTitle("save tree data");
+		fileChooser.showDialog(this, "确定");
+
+		File file = fileChooser.getSelectedFile();
+		if (!file.getParentFile().exists()) {
+			file.getParentFile().mkdirs();
+		}
+
+		List<String> list = new ArrayList<>();
+		list.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+		list.add("--------------------");
+		logs(root, list);
+
+		try (FileWriter fw = new FileWriter(file)) {
+			for (String line : list) {
+				fw.append(line + "\n");
+			}
+
+			fw.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void logs(DefaultMutableTreeNode parent, List<String> list) {
+		if (parent == null)
+			return;
+
+		for (int i = 0; i < parent.getChildCount(); i++) {
+			DefaultMutableTreeNode child = (DefaultMutableTreeNode) parent.getChildAt(i);
+			Invocation invoke = (Invocation) child.getUserObject();
+			int count = invoke.getCount();
+			Mod m = Mod.getByModifier(invoke.getMod());
+			list.add(m.getLogPrefix(count) + invoke.getRawLine());
+
+			logs(child, list);
+		}
+	}
+
 	private void addNode(String line, int row) {
 		int count = countSpace(line);
 		int index = line.indexOf("->");
@@ -677,11 +735,11 @@ public class MainFrame extends JFrame {
 			index = line.length();
 		}
 
-		line = line.substring(count, index).replaceAll("> +", ">");
+		String newLine = line.substring(count, index).replaceAll("> +", ">");
 		if (result != null)
-			line += result;
+			newLine += result;
 
-		Invocation invoke = new Invocation(line, count, mod);
+		Invocation invoke = new Invocation(line, newLine, count, mod);
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode(invoke);
 
 		if (count < lastCount) {

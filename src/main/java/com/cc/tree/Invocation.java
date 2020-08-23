@@ -19,12 +19,15 @@ public class Invocation implements Serializable {
 
 	private final String method; // 完整路径
 
+	private String rawLine;
+
 	private String line;
 
 	private String result;
 
-	public Invocation(String line, int count, int mod) {
+	public Invocation(String rawLine, String line, int count, int mod) {
 		this.id = idMaker.getAndIncrement();
+		this.rawLine = rawLine;
 		this.line = line.trim();
 		this.count = count;
 		this.method = line.substring(0, line.indexOf("("));
@@ -37,6 +40,10 @@ public class Invocation implements Serializable {
 
 	public String getMethodName() {
 		return method.substring(method.lastIndexOf(".") + 1);
+	}
+
+	public String getRawLine() {
+		return rawLine;
 	}
 
 	public String getClassName() {

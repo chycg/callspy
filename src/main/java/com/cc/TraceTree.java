@@ -40,7 +40,7 @@ public class TraceTree {
 				text = (String) trans.getTransferData(DataFlavor.stringFlavor);
 				if (text != null && text.trim().length() > 0) {
 					File file = new File(text.trim());
-					if (file.exists()) {
+					if (file.exists() && !file.isDirectory()) {
 						return file.getAbsolutePath();
 					}
 				}

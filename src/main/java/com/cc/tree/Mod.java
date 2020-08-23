@@ -2,6 +2,7 @@ package com.cc.tree;
 
 import java.awt.Color;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,6 +43,11 @@ public enum Mod {
 		return color;
 	}
 
+	public String getLogPrefix(int count) {
+		String s = String.valueOf(sign);
+		return String.join("", Collections.nCopies(count, s));
+	}
+
 	public static Mod getModByChar(char c) {
 		return Stream.of(Mod.values()).filter(e -> e.sign == c).findAny().orElse(Mod.PUBLIC);
 	}
@@ -70,4 +76,5 @@ public enum Mod {
 
 		return Mod.DEFAULT;
 	}
+
 }

@@ -653,12 +653,12 @@ public class Painter extends JComponent implements Scrollable {
 
 	@Override
 	public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return getHeight() / 60;
+		return getHeight() / 100;
 	}
 
 	@Override
 	public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-		return getHeight() / 120;
+		return getHeight() / 200;
 	}
 
 	@Override

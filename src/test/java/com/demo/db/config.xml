@@ -32,6 +32,6 @@
 
 	<mappers>
 		<!-- SQL代码和映射信息配置文件 -->
-		<mapper resource="com/demo/StudentMapper.xml" />
+		<mapper resource="com/demo/db//StudentMapper.xml" />
 	</mappers>
 </configuration>

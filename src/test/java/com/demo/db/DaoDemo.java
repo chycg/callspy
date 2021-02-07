@@ -21,11 +21,11 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
-public class StudentDao {
+public class DaoDemo {
 
 	public static void main(String[] args) throws Exception {
 		// 1. 加载MyBatis的配置文件：mybatis.xml（它也加载关联的映射文件，也就是mappers结点下的映射文件）
-		InputStream in = StudentDao.class.getResourceAsStream("config.xml");
+		InputStream in = DaoDemo.class.getResourceAsStream("config.xml");
 
 		// 2. SqlSessionFactoryBuidler实例将通过输入流调用build方法来构建 SqlSession 工厂
 		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(in);
@@ -35,7 +35,7 @@ public class StudentDao {
 
 		// 4. 准备基本信息
 		// 4.1) statement: 用来定位映射文件（StudentMapper.xml）中的语句（通过namespace id + select id)
-		String statement = "com.demo.StudentMapper.getStudent";
+		String statement = "com.demo.db.StudentMapper.getStudent";
 
 		// 4.2) paramter: 传进去的参数，也就是需要获取students表中主键值为1的记录
 		int parameter = 1;
